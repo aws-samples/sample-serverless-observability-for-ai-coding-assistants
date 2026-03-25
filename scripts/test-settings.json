@@ -1,0 +1,11 @@
+{
+  "env": {
+    "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
+    "OTEL_METRICS_EXPORTER": "otlp",
+    "OTEL_EXPORTER_OTLP_PROTOCOL": "http/protobuf",
+    "OTEL_EXPORTER_OTLP_ENDPOINT": "<REPLACE_WITH_otlp_endpoint_url>",
+    "OTEL_EXPORTER_OTLP_HEADERS": "Authorization=Bearer <REPLACE_WITH_telemetry_api_key>",
+    "OTEL_METRIC_EXPORT_INTERVAL": "10000",
+    "NODE_TLS_REJECT_UNAUTHORIZED": "0"
+  }
+}

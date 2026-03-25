@@ -1,0 +1,575 @@
+{
+  "uid": "claude-code-organization",
+  "title": "Claude Code — Organization Dashboard",
+  "timezone": "browser",
+  "refresh": "1m",
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "row",
+      "title": "Executive Summary",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Active Developers",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 1
+      },
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "${DS_ATHENA}"
+      },
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "AwsDataCatalog",
+            "database": "${athena_database}",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT count(distinct user_id) as developers FROM ${athena_database}.logs WHERE year BETWEEN year(date($__timeFrom())) AND year(date($__timeTo())) AND month BETWEEN month(date($__timeFrom())) AND month(date($__timeTo())) AND day BETWEEN day_of_month(date($__timeFrom())) AND day_of_month(date($__timeTo()))",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Total Sessions",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 1
+      },
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "${DS_ATHENA}"
+      },
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "AwsDataCatalog",
+            "database": "${athena_database}",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT count(distinct session_id) as sessions FROM ${athena_database}.logs WHERE year BETWEEN year(date($__timeFrom())) AND year(date($__timeTo())) AND month BETWEEN month(date($__timeFrom())) AND month(date($__timeTo())) AND day BETWEEN day_of_month(date($__timeFrom())) AND day_of_month(date($__timeTo()))",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Total Tokens",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 1
+      },
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "${DS_ATHENA}"
+      },
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "AwsDataCatalog",
+            "database": "${athena_database}",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT coalesce(sum(cast(input_tokens as bigint)),0) + coalesce(sum(cast(output_tokens as bigint)),0) as tokens FROM ${athena_database}.logs WHERE year BETWEEN year(date($__timeFrom())) AND year(date($__timeTo())) AND month BETWEEN month(date($__timeFrom())) AND month(date($__timeTo())) AND day BETWEEN day_of_month(date($__timeFrom())) AND day_of_month(date($__timeTo())) AND event_name = 'api_request'",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              {
+                "color": "purple",
+                "value": null
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Total Cost (USD)",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 1
+      },
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "${DS_ATHENA}"
+      },
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "AwsDataCatalog",
+            "database": "${athena_database}",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT round(coalesce(sum(cast(cost_usd as double)),0), 2) as cost FROM ${athena_database}.logs WHERE year BETWEEN year(date($__timeFrom())) AND year(date($__timeTo())) AND month BETWEEN month(date($__timeFrom())) AND month(date($__timeTo())) AND day BETWEEN day_of_month(date($__timeFrom())) AND day_of_month(date($__timeTo())) AND event_name = 'api_request'",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "thresholds": {
+            "steps": [
+              {
+                "color": "orange",
+                "value": null
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 6,
+      "type": "row",
+      "title": "Developer Leaderboard",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 5
+      }
+    },
+    {
+      "id": 7,
+      "type": "table",
+      "title": "Top Developers by Cost",
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 6
+      },
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "${DS_ATHENA}"
+      },
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "AwsDataCatalog",
+            "database": "${athena_database}",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT substr(user_id, 1, 16) as developer, count(*) as api_requests, count(distinct session_id) as sessions, round(sum(cast(cost_usd as double)), 4) as total_cost, sum(cast(input_tokens as bigint)) + sum(cast(output_tokens as bigint)) as total_tokens, round(avg(cast(duration_ms as bigint))/1000.0, 2) as avg_response_sec FROM ${athena_database}.logs WHERE year BETWEEN year(date($__timeFrom())) AND year(date($__timeTo())) AND month BETWEEN month(date($__timeFrom())) AND month(date($__timeTo())) AND day BETWEEN day_of_month(date($__timeFrom())) AND day_of_month(date($__timeTo())) AND event_name = 'api_request' GROUP BY user_id ORDER BY total_cost DESC LIMIT 25",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "table",
+      "title": "Top Developers by Sessions",
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 6
+      },
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "${DS_ATHENA}"
+      },
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "AwsDataCatalog",
+            "database": "${athena_database}",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT substr(user_id, 1, 16) as developer, count(distinct session_id) as sessions, count(*) as total_events, min(event_timestamp) as first_seen, max(event_timestamp) as last_active FROM ${athena_database}.logs WHERE year BETWEEN year(date($__timeFrom())) AND year(date($__timeTo())) AND month BETWEEN month(date($__timeFrom())) AND month(date($__timeTo())) AND day BETWEEN day_of_month(date($__timeFrom())) AND day_of_month(date($__timeTo())) GROUP BY user_id ORDER BY sessions DESC LIMIT 25",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "type": "row",
+      "title": "Distribution & Efficiency",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 16
+      }
+    },
+    {
+      "id": 10,
+      "type": "piechart",
+      "title": "Terminal Type",
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 0,
+        "y": 17
+      },
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "${DS_ATHENA}"
+      },
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "AwsDataCatalog",
+            "database": "${athena_database}",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT coalesce(terminal_type, 'unknown') as terminal, count(distinct session_id) as sessions FROM ${athena_database}.logs WHERE year BETWEEN year(date($__timeFrom())) AND year(date($__timeTo())) AND month BETWEEN month(date($__timeFrom())) AND month(date($__timeTo())) AND day BETWEEN day_of_month(date($__timeFrom())) AND day_of_month(date($__timeTo())) GROUP BY terminal_type",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 11,
+      "type": "piechart",
+      "title": "Model Cost Split",
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 6,
+        "y": 17
+      },
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "${DS_ATHENA}"
+      },
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "AwsDataCatalog",
+            "database": "${athena_database}",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT model, round(sum(cast(cost_usd as double)), 4) as cost FROM ${athena_database}.logs WHERE year BETWEEN year(date($__timeFrom())) AND year(date($__timeTo())) AND month BETWEEN month(date($__timeFrom())) AND month(date($__timeTo())) AND day BETWEEN day_of_month(date($__timeFrom())) AND day_of_month(date($__timeTo())) AND event_name = 'api_request' AND model IS NOT NULL GROUP BY model",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 12,
+      "type": "piechart",
+      "title": "Token Type Split",
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 12,
+        "y": 17
+      },
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "${DS_ATHENA}"
+      },
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "AwsDataCatalog",
+            "database": "${athena_database}",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT 'Input' as type, sum(cast(input_tokens as bigint)) as tokens FROM ${athena_database}.logs WHERE year BETWEEN year(date($__timeFrom())) AND year(date($__timeTo())) AND month BETWEEN month(date($__timeFrom())) AND month(date($__timeTo())) AND day BETWEEN day_of_month(date($__timeFrom())) AND day_of_month(date($__timeTo())) AND event_name = 'api_request' UNION ALL SELECT 'Output', sum(cast(output_tokens as bigint)) FROM ${athena_database}.logs WHERE year BETWEEN year(date($__timeFrom())) AND year(date($__timeTo())) AND month BETWEEN month(date($__timeFrom())) AND month(date($__timeTo())) AND day BETWEEN day_of_month(date($__timeFrom())) AND day_of_month(date($__timeTo())) AND event_name = 'api_request' UNION ALL SELECT 'Cache Read', sum(cast(cache_read_tokens as bigint)) FROM ${athena_database}.logs WHERE year BETWEEN year(date($__timeFrom())) AND year(date($__timeTo())) AND month BETWEEN month(date($__timeFrom())) AND month(date($__timeTo())) AND day BETWEEN day_of_month(date($__timeFrom())) AND day_of_month(date($__timeTo())) AND event_name = 'api_request' UNION ALL SELECT 'Cache Created', sum(cast(cache_creation_tokens as bigint)) FROM ${athena_database}.logs WHERE year BETWEEN year(date($__timeFrom())) AND year(date($__timeTo())) AND month BETWEEN month(date($__timeFrom())) AND month(date($__timeTo())) AND day BETWEEN day_of_month(date($__timeFrom())) AND day_of_month(date($__timeTo())) AND event_name = 'api_request'",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 13,
+      "type": "stat",
+      "title": "Avg Cost / Developer",
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 18,
+        "y": 17
+      },
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "${DS_ATHENA}"
+      },
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "AwsDataCatalog",
+            "database": "${athena_database}",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT round(sum(cast(cost_usd as double)) / greatest(count(distinct user_id), 1), 4) as avg_cost FROM ${athena_database}.logs WHERE year BETWEEN year(date($__timeFrom())) AND year(date($__timeTo())) AND month BETWEEN month(date($__timeFrom())) AND month(date($__timeTo())) AND day BETWEEN day_of_month(date($__timeFrom())) AND day_of_month(date($__timeTo())) AND event_name = 'api_request'",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "thresholds": {
+            "steps": [
+              {
+                "color": "orange",
+                "value": null
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 14,
+      "type": "stat",
+      "title": "Avg Tokens / Session",
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 21,
+        "y": 17
+      },
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "${DS_ATHENA}"
+      },
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "AwsDataCatalog",
+            "database": "${athena_database}",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT round(cast(sum(cast(input_tokens as bigint)) + sum(cast(output_tokens as bigint)) as double) / greatest(count(distinct session_id), 1), 0) as tps FROM ${athena_database}.logs WHERE year BETWEEN year(date($__timeFrom())) AND year(date($__timeTo())) AND month BETWEEN month(date($__timeFrom())) AND month(date($__timeTo())) AND day BETWEEN day_of_month(date($__timeFrom())) AND day_of_month(date($__timeTo())) AND event_name = 'api_request'",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              {
+                "color": "purple",
+                "value": null
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 15,
+      "type": "stat",
+      "title": "Avg Cost / Session",
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 18,
+        "y": 21
+      },
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "${DS_ATHENA}"
+      },
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "AwsDataCatalog",
+            "database": "${athena_database}",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT round(sum(cast(cost_usd as double)) / greatest(count(distinct session_id), 1), 4) as cps FROM ${athena_database}.logs WHERE year BETWEEN year(date($__timeFrom())) AND year(date($__timeTo())) AND month BETWEEN month(date($__timeFrom())) AND month(date($__timeTo())) AND day BETWEEN day_of_month(date($__timeFrom())) AND day_of_month(date($__timeTo())) AND event_name = 'api_request'",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "thresholds": {
+            "steps": [
+              {
+                "color": "orange",
+                "value": null
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 16,
+      "type": "stat",
+      "title": "Cache Hit Ratio",
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 21,
+        "y": 21
+      },
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "${DS_ATHENA}"
+      },
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "AwsDataCatalog",
+            "database": "${athena_database}",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT round(cast(sum(cast(cache_read_tokens as bigint)) as double) / greatest(sum(cast(cache_read_tokens as bigint)) + sum(cast(cache_creation_tokens as bigint)), 1) * 100, 1) as pct FROM ${athena_database}.logs WHERE year BETWEEN year(date($__timeFrom())) AND year(date($__timeTo())) AND month BETWEEN month(date($__timeFrom())) AND month(date($__timeTo())) AND day BETWEEN day_of_month(date($__timeFrom())) AND day_of_month(date($__timeTo())) AND event_name = 'api_request'",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 50
+              },
+              {
+                "color": "green",
+                "value": 80
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "version": 1,
+  "templating": {
+    "list": [
+      {
+        "name": "DS_ATHENA",
+        "type": "datasource",
+        "query": "grafana-athena-datasource",
+        "current": {},
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
+        "label": "Athena Data Source"
+      },
+      {
+        "name": "athena_database",
+        "type": "constant",
+        "query": "claude_code_telemetry_dev",
+        "current": {
+          "text": "claude_code_telemetry_dev",
+          "value": "claude_code_telemetry_dev"
+        },
+        "hide": 2,
+        "label": "Athena Database",
+        "description": "Glue database name (e.g. claude_code_telemetry_dev, claude_code_telemetry_prod)"
+      }
+    ]
+  }
+}

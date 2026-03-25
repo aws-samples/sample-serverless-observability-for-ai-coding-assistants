@@ -1,0 +1,44 @@
+# Claude Code Telemetry Platform — Variable Configuration
+# Copy to terraform.tfvars and fill in your values.
+
+# AWS region for all resources
+aws_region = "us-east-1"
+
+# Deployment environment: dev, staging, or prod
+environment = "dev"
+
+# Project name — used as prefix for all resource names
+# Keep short (<16 chars) to avoid ALB 32-char name limit
+project_name = "claude-code-telemetry"
+
+# Corporate network CIDRs allowed to access Grafana
+corporate_cidr_blocks = ["10.0.0.0/8"]
+
+# Bearer token for authenticating OTLP clients
+# Generate a strong random string. Clients must set:
+#   OTEL_EXPORTER_OTLP_HEADERS="Authorization=Bearer <this-value>"
+telemetry_api_key = "change-me-to-a-strong-random-string"
+
+# Grafana authentication provider
+# "SAML" — works in all accounts (default)
+# "AWS_SSO" — requires IAM Identity Center enabled in the account
+grafana_auth_provider = "SAML"
+
+# Optional: override the Grafana workspace name
+# Useful to avoid 409 Duplicate errors when re-creating workspaces
+# grafana_workspace_name = "my-telemetry-grafana"
+
+# Optional: ACM certificate ARN for the ALB HTTPS listener
+# Leave empty to use a self-signed TLS certificate (fine for PoC)
+# acm_certificate_arn = "<your-acm-certificate-arn>"
+
+# Optional: pre-built collector Docker image URI
+# Leave empty to use the auto-created ECR repository
+# collector_image = "<your-account-id>.dkr.ecr.<your-region>.amazonaws.com/collector:v1"
+
+# Resource tags
+tags = {
+  Project     = "claude-code-telemetry"
+  ManagedBy   = "terraform"
+  Environment = "dev"
+}

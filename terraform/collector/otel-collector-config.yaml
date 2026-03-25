@@ -1,0 +1,50 @@
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+        auth:
+          authenticator: bearertokenauth
+
+processors:
+  batch:
+    timeout: 10s
+    send_batch_size: 1024
+
+  deltatocumulative:
+
+exporters:
+  awskinesis/metrics:
+    aws:
+      stream_name: "${KINESIS_METRICS_STREAM}"
+      region: "${AWS_REGION}"
+    encoding:
+      name: otlp_json
+
+  awskinesis/logs:
+    aws:
+      stream_name: "${KINESIS_LOGS_STREAM}"
+      region: "${AWS_REGION}"
+    encoding:
+      name: otlp_json
+
+  debug:
+    verbosity: detailed
+
+extensions:
+  bearertokenauth:
+    token: "${TELEMETRY_API_KEY}"
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+service:
+  extensions: [bearertokenauth, health_check]
+  pipelines:
+    metrics:
+      receivers: [otlp]
+      processors: [deltatocumulative, batch]
+      exporters: [awskinesis/metrics, debug]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [awskinesis/logs, debug]
