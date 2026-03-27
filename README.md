@@ -129,6 +129,18 @@ cd ../../scripts
 
 See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for the full walkthrough.
 
+## Client Configuration
+
+```bash
+export CLAUDE_CODE_ENABLE_TELEMETRY=1
+export OTEL_METRICS_EXPORTER=otlp
+export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+export OTEL_EXPORTER_OTLP_ENDPOINT=<otlp_endpoint_url>
+export OTEL_EXPORTER_OTLP_HEADERS="Authorization=Bearer <telemetry_api_key>"
+```
+
+Pre-built config files in `scripts/test-settings.json` and `scripts/full-telemetry-settings.json`.
+
 ## Known Limitations & Production Readiness
 
 This is a **PoC deployment**. The following HIGH-severity issues must be resolved before production use:
@@ -149,18 +161,12 @@ Recently fixed: VULN-014 (Lambda key injection/field overwrite), VULN-015 (gRPC 
 Full vulnerability register: [docs/VULNERABILITIES.md](docs/VULNERABILITIES.md)
 Threat model: [docs/THREAT-MODEL.md](docs/THREAT-MODEL.md)
 
-## Client Configuration
+## Security
 
-```bash
-export CLAUDE_CODE_ENABLE_TELEMETRY=1
-export OTEL_METRICS_EXPORTER=otlp
-export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
-export OTEL_EXPORTER_OTLP_ENDPOINT=<otlp_endpoint_url>
-export OTEL_EXPORTER_OTLP_HEADERS="Authorization=Bearer <telemetry_api_key>"
-```
+Note: this asset represents a proof-of-value for the services included and is not intended as a production-ready solution. You must determine how the AWS Shared Responsibility applies to their specific use case and implement the needed controls to achieve their desired security outcomes. AWS offers a broad set of security tools and configurations to enable our customers.
 
-Pre-built config files in `scripts/test-settings.json` and `scripts/full-telemetry-settings.json`.
+Ultimately it is your responsibility as the developer of a full stack application to ensure all of its aspects are secure. We provide security best practices in repository documentation and provide a secure baseline but Amazon holds no responsibility for the security of applications built from this tool.
 
 ## License
 
-Internal use only.
+This project is licensed under the MIT-0 License.
