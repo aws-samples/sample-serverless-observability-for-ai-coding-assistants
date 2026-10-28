@@ -2,7 +2,7 @@
 
 An AWS-based observability platform for collecting, storing, and visualizing OpenTelemetry telemetry from AI coding assistants — [Claude Code](https://docs.anthropic.com/en/docs/claude-code/monitoring-usage) and the [OpenAI Codex CLI](https://developers.openai.com/codex/config-advanced). Built with Terraform, it deploys an OpenTelemetry Collector on ECS Fargate behind an ALB, with both metrics and logs flowing through Kinesis Data Streams → Firehose (with a Lambda flatten transform) → S3 as Parquet. All data is queryable via Amazon Athena and visualized through Amazon Managed Grafana with the Athena data source.
 
-> **Client coverage:** the Glue schema was built around Claude Code's event and attribute names. Codex events land in the same `logs` table, and the flatten Lambda copies Codex's conversation, token, status-code and error attributes onto the same columns. Codex CLI 0.164 sends no cost and no per-person ID, so `cost_usd` and `user_id` stay empty for Codex rows. The Grafana dashboards have no Codex panels; query Codex data in Athena. See [Codex CLI](#codex-cli).
+> **Client coverage:** the Glue schema was built around Claude Code's event and attribute names. Codex events land in the same `logs` table, and the flatten Lambda copies Codex's conversation, token, status-code and error attributes onto the same columns. Each Grafana dashboard has Codex CLI sections that mirror its Claude Code sections. Codex CLI 0.164 sends no cost and no per-person ID, so Codex sections have no cost or per-developer panels and group by conversation instead. See [Codex CLI](#codex-cli).
 >
 > AWS resource names keep the `claude-code-telemetry` prefix (the `project_name` default) so existing deployments are not replaced.
 

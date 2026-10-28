@@ -279,7 +279,7 @@ export OTEL_EXPORTER_OTLP_HEADERS="Authorization=Bearer <telemetry_api_key>"
 
 Token counts arrive on `codex.sse_event` rows for completed responses (`event.kind` = `response.completed`). `event_name`, `event_timestamp`, `model`, `terminal_type`, `prompt` (with `log_user_prompt = true`), `tool_name`, `decision` and `duration_ms` are filled directly. Codex CLI 0.164 sends no cost, so `cost_usd` stays empty. `user_id` stays empty too: Codex's `user.account_id` names the ChatGPT account, which several users can share (Codex tracks a separate account-user ID), so it isn't stored as `user_id`. Rows ingested before this mapping have no Codex session or token values. Most Codex metrics are histograms, which the flatten Lambda stores with `metric_value = 0`.
 
-Claude Code's `api_error` rows also fill `status_code` and `error`. The Grafana dashboards have no Codex panels; query Codex data in Athena:
+Each Grafana dashboard has Codex CLI sections that mirror its Claude Code sections (for example Overview, Token Analytics, Conversation Activity and Errors on the telemetry dashboard). Codex sections show tokens, cache hit ratio, latency, prompts, tool activity and errors, and group by conversation where the Claude Code sections group by developer. They have no cost panels. The Claude Code sections exclude Codex rows, and Claude Code's `api_error` rows now also fill `status_code` and `error`.
 
 ```sql
 -- Codex events for one day; adjust the date

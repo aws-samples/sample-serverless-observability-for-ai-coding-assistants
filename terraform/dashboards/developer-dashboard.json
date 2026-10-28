@@ -1,6 +1,6 @@
 {
   "uid": "claude-code-developer",
-  "title": "Claude Code — Developer Dashboard",
+  "title": "AI Coding Assistants — Developer Dashboard",
   "timezone": "browser",
   "refresh": "1m",
   "time": {
@@ -11,7 +11,7 @@
     {
       "id": 1,
       "type": "row",
-      "title": "Overview",
+      "title": "Claude Code — Overview",
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -43,7 +43,7 @@
             "resultReuseMaxAgeInMinutes": 5
           },
           "format": 1,
-          "rawSQL": "SELECT count(distinct session_id) as sessions FROM ${athena_database}.logs WHERE year BETWEEN year(date($__timeFrom())) AND year(date($__timeTo())) AND month BETWEEN month(date($__timeFrom())) AND month(date($__timeTo())) AND day BETWEEN day_of_month(date($__timeFrom())) AND day_of_month(date($__timeTo()))",
+          "rawSQL": "SELECT count(distinct session_id) as sessions FROM ${athena_database}.logs WHERE year BETWEEN year($__timeFrom()) AND year($__timeTo()) AND year * 10000 + month * 100 + day BETWEEN year($__timeFrom()) * 10000 + month($__timeFrom()) * 100 + day_of_month($__timeFrom()) AND year($__timeTo()) * 10000 + month($__timeTo()) * 100 + day_of_month($__timeTo()) AND coalesce(service_name, '') NOT LIKE 'codex%'",
           "refId": "A"
         }
       ],
@@ -84,7 +84,7 @@
             "resultReuseMaxAgeInMinutes": 5
           },
           "format": 1,
-          "rawSQL": "SELECT coalesce(sum(cast(input_tokens as bigint)),0) + coalesce(sum(cast(output_tokens as bigint)),0) as tokens FROM ${athena_database}.logs WHERE year BETWEEN year(date($__timeFrom())) AND year(date($__timeTo())) AND month BETWEEN month(date($__timeFrom())) AND month(date($__timeTo())) AND day BETWEEN day_of_month(date($__timeFrom())) AND day_of_month(date($__timeTo())) AND event_name = 'api_request'",
+          "rawSQL": "SELECT coalesce(sum(cast(input_tokens as bigint)),0) + coalesce(sum(cast(output_tokens as bigint)),0) as tokens FROM ${athena_database}.logs WHERE year BETWEEN year($__timeFrom()) AND year($__timeTo()) AND year * 10000 + month * 100 + day BETWEEN year($__timeFrom()) * 10000 + month($__timeFrom()) * 100 + day_of_month($__timeFrom()) AND year($__timeTo()) * 10000 + month($__timeTo()) * 100 + day_of_month($__timeTo()) AND event_name = 'api_request'",
           "refId": "A"
         }
       ],
@@ -125,7 +125,7 @@
             "resultReuseMaxAgeInMinutes": 5
           },
           "format": 1,
-          "rawSQL": "SELECT round(coalesce(sum(cast(cost_usd as double)),0), 4) as cost FROM ${athena_database}.logs WHERE year BETWEEN year(date($__timeFrom())) AND year(date($__timeTo())) AND month BETWEEN month(date($__timeFrom())) AND month(date($__timeTo())) AND day BETWEEN day_of_month(date($__timeFrom())) AND day_of_month(date($__timeTo())) AND event_name = 'api_request'",
+          "rawSQL": "SELECT round(coalesce(sum(cast(cost_usd as double)),0), 4) as cost FROM ${athena_database}.logs WHERE year BETWEEN year($__timeFrom()) AND year($__timeTo()) AND year * 10000 + month * 100 + day BETWEEN year($__timeFrom()) * 10000 + month($__timeFrom()) * 100 + day_of_month($__timeFrom()) AND year($__timeTo()) * 10000 + month($__timeTo()) * 100 + day_of_month($__timeTo()) AND event_name = 'api_request'",
           "refId": "A"
         }
       ],
@@ -167,7 +167,7 @@
             "resultReuseMaxAgeInMinutes": 5
           },
           "format": 1,
-          "rawSQL": "SELECT round(avg(cast(duration_ms as bigint))/1000.0, 2) as seconds FROM ${athena_database}.logs WHERE year BETWEEN year(date($__timeFrom())) AND year(date($__timeTo())) AND month BETWEEN month(date($__timeFrom())) AND month(date($__timeTo())) AND day BETWEEN day_of_month(date($__timeFrom())) AND day_of_month(date($__timeTo())) AND event_name = 'api_request' AND duration_ms IS NOT NULL",
+          "rawSQL": "SELECT round(avg(cast(duration_ms as bigint))/1000.0, 2) as seconds FROM ${athena_database}.logs WHERE year BETWEEN year($__timeFrom()) AND year($__timeTo()) AND year * 10000 + month * 100 + day BETWEEN year($__timeFrom()) * 10000 + month($__timeFrom()) * 100 + day_of_month($__timeFrom()) AND year($__timeTo()) * 10000 + month($__timeTo()) * 100 + day_of_month($__timeTo()) AND event_name = 'api_request' AND duration_ms IS NOT NULL",
           "refId": "A"
         }
       ],
@@ -196,7 +196,7 @@
     {
       "id": 6,
       "type": "row",
-      "title": "Usage Over Time",
+      "title": "Claude Code — Usage Over Time",
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -228,7 +228,7 @@
             "resultReuseMaxAgeInMinutes": 5
           },
           "format": 1,
-          "rawSQL": "SELECT date(date_parse(event_timestamp, '%Y-%m-%dT%H:%i:%s.%fZ')) as day, model, round(sum(cast(cost_usd as double)), 4) as cost, sum(cast(input_tokens as bigint)) as input_tok, sum(cast(output_tokens as bigint)) as output_tok FROM ${athena_database}.logs WHERE year BETWEEN year(date($__timeFrom())) AND year(date($__timeTo())) AND month BETWEEN month(date($__timeFrom())) AND month(date($__timeTo())) AND day BETWEEN day_of_month(date($__timeFrom())) AND day_of_month(date($__timeTo())) AND event_name = 'api_request' AND model IS NOT NULL GROUP BY 1, 2 ORDER BY 1 DESC",
+          "rawSQL": "SELECT date(date_parse(event_timestamp, '%Y-%m-%dT%H:%i:%s.%fZ')) as day, model, round(sum(cast(cost_usd as double)), 4) as cost, sum(cast(input_tokens as bigint)) as input_tok, sum(cast(output_tokens as bigint)) as output_tok FROM ${athena_database}.logs WHERE year BETWEEN year($__timeFrom()) AND year($__timeTo()) AND year * 10000 + month * 100 + day BETWEEN year($__timeFrom()) * 10000 + month($__timeFrom()) * 100 + day_of_month($__timeFrom()) AND year($__timeTo()) * 10000 + month($__timeTo()) * 100 + day_of_month($__timeTo()) AND event_name = 'api_request' AND model IS NOT NULL GROUP BY 1, 2 ORDER BY 1 DESC",
           "refId": "A"
         }
       ]
@@ -257,7 +257,7 @@
             "resultReuseMaxAgeInMinutes": 5
           },
           "format": 1,
-          "rawSQL": "SELECT model, sum(cast(input_tokens as bigint)) as input_tokens, sum(cast(output_tokens as bigint)) as output_tokens, sum(cast(cache_read_tokens as bigint)) as cache_read, sum(cast(cache_creation_tokens as bigint)) as cache_created FROM ${athena_database}.logs WHERE year BETWEEN year(date($__timeFrom())) AND year(date($__timeTo())) AND month BETWEEN month(date($__timeFrom())) AND month(date($__timeTo())) AND day BETWEEN day_of_month(date($__timeFrom())) AND day_of_month(date($__timeTo())) AND event_name = 'api_request' GROUP BY model ORDER BY input_tokens DESC",
+          "rawSQL": "SELECT model, sum(cast(input_tokens as bigint)) as input_tokens, sum(cast(output_tokens as bigint)) as output_tokens, sum(cast(cache_read_tokens as bigint)) as cache_read, sum(cast(cache_creation_tokens as bigint)) as cache_created FROM ${athena_database}.logs WHERE year BETWEEN year($__timeFrom()) AND year($__timeTo()) AND year * 10000 + month * 100 + day BETWEEN year($__timeFrom()) * 10000 + month($__timeFrom()) * 100 + day_of_month($__timeFrom()) AND year($__timeTo()) * 10000 + month($__timeTo()) * 100 + day_of_month($__timeTo()) AND event_name = 'api_request' GROUP BY model ORDER BY input_tokens DESC",
           "refId": "A"
         }
       ]
@@ -286,7 +286,7 @@
             "resultReuseMaxAgeInMinutes": 5
           },
           "format": 1,
-          "rawSQL": "SELECT model, round(sum(cast(cost_usd as double)), 4) as cost FROM ${athena_database}.logs WHERE year BETWEEN year(date($__timeFrom())) AND year(date($__timeTo())) AND month BETWEEN month(date($__timeFrom())) AND month(date($__timeTo())) AND day BETWEEN day_of_month(date($__timeFrom())) AND day_of_month(date($__timeTo())) AND event_name = 'api_request' AND model IS NOT NULL GROUP BY model",
+          "rawSQL": "SELECT model, round(sum(cast(cost_usd as double)), 4) as cost FROM ${athena_database}.logs WHERE year BETWEEN year($__timeFrom()) AND year($__timeTo()) AND year * 10000 + month * 100 + day BETWEEN year($__timeFrom()) * 10000 + month($__timeFrom()) * 100 + day_of_month($__timeFrom()) AND year($__timeTo()) * 10000 + month($__timeTo()) * 100 + day_of_month($__timeTo()) AND event_name = 'api_request' AND model IS NOT NULL GROUP BY model",
           "refId": "A"
         }
       ],
@@ -321,7 +321,7 @@
             "resultReuseMaxAgeInMinutes": 5
           },
           "format": 1,
-          "rawSQL": "SELECT 'Input' as type, sum(cast(input_tokens as bigint)) as tokens FROM ${athena_database}.logs WHERE year BETWEEN year(date($__timeFrom())) AND year(date($__timeTo())) AND month BETWEEN month(date($__timeFrom())) AND month(date($__timeTo())) AND day BETWEEN day_of_month(date($__timeFrom())) AND day_of_month(date($__timeTo())) AND event_name = 'api_request' UNION ALL SELECT 'Output', sum(cast(output_tokens as bigint)) FROM ${athena_database}.logs WHERE year BETWEEN year(date($__timeFrom())) AND year(date($__timeTo())) AND month BETWEEN month(date($__timeFrom())) AND month(date($__timeTo())) AND day BETWEEN day_of_month(date($__timeFrom())) AND day_of_month(date($__timeTo())) AND event_name = 'api_request' UNION ALL SELECT 'Cache Read', sum(cast(cache_read_tokens as bigint)) FROM ${athena_database}.logs WHERE year BETWEEN year(date($__timeFrom())) AND year(date($__timeTo())) AND month BETWEEN month(date($__timeFrom())) AND month(date($__timeTo())) AND day BETWEEN day_of_month(date($__timeFrom())) AND day_of_month(date($__timeTo())) AND event_name = 'api_request' UNION ALL SELECT 'Cache Created', sum(cast(cache_creation_tokens as bigint)) FROM ${athena_database}.logs WHERE year BETWEEN year(date($__timeFrom())) AND year(date($__timeTo())) AND month BETWEEN month(date($__timeFrom())) AND month(date($__timeTo())) AND day BETWEEN day_of_month(date($__timeFrom())) AND day_of_month(date($__timeTo())) AND event_name = 'api_request'",
+          "rawSQL": "SELECT 'Input' as type, sum(cast(input_tokens as bigint)) as tokens FROM ${athena_database}.logs WHERE year BETWEEN year($__timeFrom()) AND year($__timeTo()) AND year * 10000 + month * 100 + day BETWEEN year($__timeFrom()) * 10000 + month($__timeFrom()) * 100 + day_of_month($__timeFrom()) AND year($__timeTo()) * 10000 + month($__timeTo()) * 100 + day_of_month($__timeTo()) AND event_name = 'api_request' UNION ALL SELECT 'Output', sum(cast(output_tokens as bigint)) FROM ${athena_database}.logs WHERE year BETWEEN year($__timeFrom()) AND year($__timeTo()) AND year * 10000 + month * 100 + day BETWEEN year($__timeFrom()) * 10000 + month($__timeFrom()) * 100 + day_of_month($__timeFrom()) AND year($__timeTo()) * 10000 + month($__timeTo()) * 100 + day_of_month($__timeTo()) AND event_name = 'api_request' UNION ALL SELECT 'Cache Read', sum(cast(cache_read_tokens as bigint)) FROM ${athena_database}.logs WHERE year BETWEEN year($__timeFrom()) AND year($__timeTo()) AND year * 10000 + month * 100 + day BETWEEN year($__timeFrom()) * 10000 + month($__timeFrom()) * 100 + day_of_month($__timeFrom()) AND year($__timeTo()) * 10000 + month($__timeTo()) * 100 + day_of_month($__timeTo()) AND event_name = 'api_request' UNION ALL SELECT 'Cache Created', sum(cast(cache_creation_tokens as bigint)) FROM ${athena_database}.logs WHERE year BETWEEN year($__timeFrom()) AND year($__timeTo()) AND year * 10000 + month * 100 + day BETWEEN year($__timeFrom()) * 10000 + month($__timeFrom()) * 100 + day_of_month($__timeFrom()) AND year($__timeTo()) * 10000 + month($__timeTo()) * 100 + day_of_month($__timeTo()) AND event_name = 'api_request'",
           "refId": "A"
         }
       ],
@@ -356,7 +356,7 @@
             "resultReuseMaxAgeInMinutes": 5
           },
           "format": 1,
-          "rawSQL": "SELECT terminal_type, count(distinct session_id) as sessions FROM ${athena_database}.logs WHERE year BETWEEN year(date($__timeFrom())) AND year(date($__timeTo())) AND month BETWEEN month(date($__timeFrom())) AND month(date($__timeTo())) AND day BETWEEN day_of_month(date($__timeFrom())) AND day_of_month(date($__timeTo())) AND terminal_type IS NOT NULL GROUP BY terminal_type",
+          "rawSQL": "SELECT terminal_type, count(distinct session_id) as sessions FROM ${athena_database}.logs WHERE year BETWEEN year($__timeFrom()) AND year($__timeTo()) AND year * 10000 + month * 100 + day BETWEEN year($__timeFrom()) * 10000 + month($__timeFrom()) * 100 + day_of_month($__timeFrom()) AND year($__timeTo()) * 10000 + month($__timeTo()) * 100 + day_of_month($__timeTo()) AND coalesce(service_name, '') NOT LIKE 'codex%' AND terminal_type IS NOT NULL GROUP BY terminal_type",
           "refId": "A"
         }
       ],
@@ -370,7 +370,7 @@
     {
       "id": 12,
       "type": "row",
-      "title": "Efficiency & Ratios",
+      "title": "Claude Code — Efficiency & Ratios",
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -402,7 +402,7 @@
             "resultReuseMaxAgeInMinutes": 5
           },
           "format": 1,
-          "rawSQL": "SELECT round(cast(sum(cast(input_tokens as bigint)) + sum(cast(output_tokens as bigint)) as double) / greatest(count(distinct session_id), 1), 0) as tps FROM ${athena_database}.logs WHERE year BETWEEN year(date($__timeFrom())) AND year(date($__timeTo())) AND month BETWEEN month(date($__timeFrom())) AND month(date($__timeTo())) AND day BETWEEN day_of_month(date($__timeFrom())) AND day_of_month(date($__timeTo())) AND event_name = 'api_request'",
+          "rawSQL": "SELECT round(cast(sum(cast(input_tokens as bigint)) + sum(cast(output_tokens as bigint)) as double) / greatest(count(distinct session_id), 1), 0) as tps FROM ${athena_database}.logs WHERE year BETWEEN year($__timeFrom()) AND year($__timeTo()) AND year * 10000 + month * 100 + day BETWEEN year($__timeFrom()) * 10000 + month($__timeFrom()) * 100 + day_of_month($__timeFrom()) AND year($__timeTo()) * 10000 + month($__timeTo()) * 100 + day_of_month($__timeTo()) AND event_name = 'api_request'",
           "refId": "A"
         }
       ],
@@ -443,7 +443,7 @@
             "resultReuseMaxAgeInMinutes": 5
           },
           "format": 1,
-          "rawSQL": "SELECT round(sum(cast(cost_usd as double)) / greatest(count(distinct session_id), 1), 4) as cps FROM ${athena_database}.logs WHERE year BETWEEN year(date($__timeFrom())) AND year(date($__timeTo())) AND month BETWEEN month(date($__timeFrom())) AND month(date($__timeTo())) AND day BETWEEN day_of_month(date($__timeFrom())) AND day_of_month(date($__timeTo())) AND event_name = 'api_request'",
+          "rawSQL": "SELECT round(sum(cast(cost_usd as double)) / greatest(count(distinct session_id), 1), 4) as cps FROM ${athena_database}.logs WHERE year BETWEEN year($__timeFrom()) AND year($__timeTo()) AND year * 10000 + month * 100 + day BETWEEN year($__timeFrom()) * 10000 + month($__timeFrom()) * 100 + day_of_month($__timeFrom()) AND year($__timeTo()) * 10000 + month($__timeTo()) * 100 + day_of_month($__timeTo()) AND event_name = 'api_request'",
           "refId": "A"
         }
       ],
@@ -485,7 +485,7 @@
             "resultReuseMaxAgeInMinutes": 5
           },
           "format": 1,
-          "rawSQL": "SELECT round(cast(sum(cast(cache_read_tokens as bigint)) as double) / greatest(sum(cast(cache_read_tokens as bigint)) + sum(cast(cache_creation_tokens as bigint)), 1) * 100, 1) as cache_hit_pct FROM ${athena_database}.logs WHERE year BETWEEN year(date($__timeFrom())) AND year(date($__timeTo())) AND month BETWEEN month(date($__timeFrom())) AND month(date($__timeTo())) AND day BETWEEN day_of_month(date($__timeFrom())) AND day_of_month(date($__timeTo())) AND event_name = 'api_request'",
+          "rawSQL": "SELECT round(cast(sum(cast(cache_read_tokens as bigint)) as double) / greatest(sum(cast(cache_read_tokens as bigint)) + sum(cast(cache_creation_tokens as bigint)), 1) * 100, 1) as cache_hit_pct FROM ${athena_database}.logs WHERE year BETWEEN year($__timeFrom()) AND year($__timeTo()) AND year * 10000 + month * 100 + day BETWEEN year($__timeFrom()) * 10000 + month($__timeFrom()) * 100 + day_of_month($__timeFrom()) AND year($__timeTo()) * 10000 + month($__timeTo()) * 100 + day_of_month($__timeTo()) AND event_name = 'api_request'",
           "refId": "A"
         }
       ],
@@ -535,7 +535,7 @@
             "resultReuseMaxAgeInMinutes": 5
           },
           "format": 1,
-          "rawSQL": "SELECT round(avg(cast(input_tokens as bigint) + cast(output_tokens as bigint)), 0) as avg_tokens FROM ${athena_database}.logs WHERE year BETWEEN year(date($__timeFrom())) AND year(date($__timeTo())) AND month BETWEEN month(date($__timeFrom())) AND month(date($__timeTo())) AND day BETWEEN day_of_month(date($__timeFrom())) AND day_of_month(date($__timeTo())) AND event_name = 'api_request'",
+          "rawSQL": "SELECT round(avg(cast(input_tokens as bigint) + cast(output_tokens as bigint)), 0) as avg_tokens FROM ${athena_database}.logs WHERE year BETWEEN year($__timeFrom()) AND year($__timeTo()) AND year * 10000 + month * 100 + day BETWEEN year($__timeFrom()) * 10000 + month($__timeFrom()) * 100 + day_of_month($__timeFrom()) AND year($__timeTo()) * 10000 + month($__timeTo()) * 100 + day_of_month($__timeTo()) AND event_name = 'api_request'",
           "refId": "A"
         }
       ],
@@ -555,7 +555,7 @@
     {
       "id": 17,
       "type": "row",
-      "title": "Prompts & Tools",
+      "title": "Claude Code — Prompts & Tools",
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -587,7 +587,7 @@
             "resultReuseMaxAgeInMinutes": 5
           },
           "format": 1,
-          "rawSQL": "SELECT event_timestamp as time, substr(user_id, 1, 12) as user, prompt as prompt, prompt_length as length FROM ${athena_database}.logs WHERE year BETWEEN year(date($__timeFrom())) AND year(date($__timeTo())) AND month BETWEEN month(date($__timeFrom())) AND month(date($__timeTo())) AND day BETWEEN day_of_month(date($__timeFrom())) AND day_of_month(date($__timeTo())) AND event_name = 'user_prompt' ORDER BY event_timestamp DESC LIMIT 25",
+          "rawSQL": "SELECT event_timestamp as time, substr(user_id, 1, 12) as user, prompt as prompt, prompt_length as length FROM ${athena_database}.logs WHERE year BETWEEN year($__timeFrom()) AND year($__timeTo()) AND year * 10000 + month * 100 + day BETWEEN year($__timeFrom()) * 10000 + month($__timeFrom()) * 100 + day_of_month($__timeFrom()) AND year($__timeTo()) * 10000 + month($__timeTo()) * 100 + day_of_month($__timeTo()) AND event_name = 'user_prompt' ORDER BY event_timestamp DESC LIMIT 25",
           "refId": "A"
         }
       ]
@@ -616,7 +616,756 @@
             "resultReuseMaxAgeInMinutes": 5
           },
           "format": 1,
-          "rawSQL": "SELECT event_timestamp as time, tool_name, decision, substr(user_id, 1, 12) as user FROM ${athena_database}.logs WHERE year BETWEEN year(date($__timeFrom())) AND year(date($__timeTo())) AND month BETWEEN month(date($__timeFrom())) AND month(date($__timeTo())) AND day BETWEEN day_of_month(date($__timeFrom())) AND day_of_month(date($__timeTo())) AND event_name = 'tool_decision' ORDER BY event_timestamp DESC LIMIT 25",
+          "rawSQL": "SELECT event_timestamp as time, tool_name, decision, substr(user_id, 1, 12) as user FROM ${athena_database}.logs WHERE year BETWEEN year($__timeFrom()) AND year($__timeTo()) AND year * 10000 + month * 100 + day BETWEEN year($__timeFrom()) * 10000 + month($__timeFrom()) * 100 + day_of_month($__timeFrom()) AND year($__timeTo()) * 10000 + month($__timeTo()) * 100 + day_of_month($__timeTo()) AND event_name = 'tool_decision' ORDER BY event_timestamp DESC LIMIT 25",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "type": "row",
+      "title": "Codex CLI — Overview",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 36
+      }
+    },
+    {
+      "id": 21,
+      "type": "stat",
+      "title": "Codex Conversations",
+      "description": "Codex CLI events (service_name codex_*). A conversation is one Codex session: its conversation.id is stored as session_id.",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 37
+      },
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "${DS_ATHENA}"
+      },
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "AwsDataCatalog",
+            "database": "${athena_database}",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT count(*) as total FROM ${athena_database}.logs WHERE year BETWEEN year($__timeFrom()) AND year($__timeTo()) AND year * 10000 + month * 100 + day BETWEEN year($__timeFrom()) * 10000 + month($__timeFrom()) * 100 + day_of_month($__timeFrom()) AND year($__timeTo()) * 10000 + month($__timeTo()) * 100 + day_of_month($__timeTo()) AND event_name = 'codex.conversation_starts'",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 22,
+      "type": "stat",
+      "title": "Codex Prompts",
+      "description": "Codex CLI events (service_name codex_*).",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 37
+      },
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "${DS_ATHENA}"
+      },
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "AwsDataCatalog",
+            "database": "${athena_database}",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT count(*) as total FROM ${athena_database}.logs WHERE year BETWEEN year($__timeFrom()) AND year($__timeTo()) AND year * 10000 + month * 100 + day BETWEEN year($__timeFrom()) * 10000 + month($__timeFrom()) * 100 + day_of_month($__timeFrom()) AND year($__timeTo()) * 10000 + month($__timeTo()) * 100 + day_of_month($__timeTo()) AND event_name = 'codex.user_prompt'",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 23,
+      "type": "stat",
+      "title": "Codex API Requests",
+      "description": "Codex CLI events (service_name codex_*).",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 37
+      },
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "${DS_ATHENA}"
+      },
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "AwsDataCatalog",
+            "database": "${athena_database}",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT count(*) as total FROM ${athena_database}.logs WHERE year BETWEEN year($__timeFrom()) AND year($__timeTo()) AND year * 10000 + month * 100 + day BETWEEN year($__timeFrom()) * 10000 + month($__timeFrom()) * 100 + day_of_month($__timeFrom()) AND year($__timeTo()) * 10000 + month($__timeTo()) * 100 + day_of_month($__timeTo()) AND event_name = 'codex.api_request'",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 24,
+      "type": "stat",
+      "title": "Codex Total Tokens",
+      "description": "Codex CLI events (service_name codex_*). Tokens come from codex.sse_event (response.completed). As for Claude Code, input tokens exclude cache reads and cache writes. Codex CLI 0.164 sends no cost, so this section has no cost panels.",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 37
+      },
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "${DS_ATHENA}"
+      },
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "AwsDataCatalog",
+            "database": "${athena_database}",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT coalesce(sum(cast(input_tokens as bigint)),0) + coalesce(sum(cast(output_tokens as bigint)),0) as total_tokens FROM ${athena_database}.logs WHERE year BETWEEN year($__timeFrom()) AND year($__timeTo()) AND year * 10000 + month * 100 + day BETWEEN year($__timeFrom()) * 10000 + month($__timeFrom()) * 100 + day_of_month($__timeFrom()) AND year($__timeTo()) * 10000 + month($__timeTo()) * 100 + day_of_month($__timeTo()) AND event_name = 'codex.sse_event' AND input_tokens IS NOT NULL",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              {
+                "color": "purple",
+                "value": null
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 25,
+      "type": "stat",
+      "title": "Codex Avg API Request Time",
+      "description": "Codex CLI events (service_name codex_*).",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 37
+      },
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "${DS_ATHENA}"
+      },
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "AwsDataCatalog",
+            "database": "${athena_database}",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT round(avg(try_cast(duration_ms as double))/1000.0, 2) as seconds FROM ${athena_database}.logs WHERE year BETWEEN year($__timeFrom()) AND year($__timeTo()) AND year * 10000 + month * 100 + day BETWEEN year($__timeFrom()) * 10000 + month($__timeFrom()) * 100 + day_of_month($__timeFrom()) AND year($__timeTo()) * 10000 + month($__timeTo()) * 100 + day_of_month($__timeTo()) AND event_name = 'codex.api_request'",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 5
+              },
+              {
+                "color": "red",
+                "value": 10
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 26,
+      "type": "stat",
+      "title": "Codex Avg Time to First Token",
+      "description": "Codex CLI events (service_name codex_*).",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 37
+      },
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "${DS_ATHENA}"
+      },
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "AwsDataCatalog",
+            "database": "${athena_database}",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT round(avg(try_cast(duration_ms as double))/1000.0, 2) as seconds FROM ${athena_database}.logs WHERE year BETWEEN year($__timeFrom()) AND year($__timeTo()) AND year * 10000 + month * 100 + day BETWEEN year($__timeFrom()) * 10000 + month($__timeFrom()) * 100 + day_of_month($__timeFrom()) AND year($__timeTo()) * 10000 + month($__timeTo()) * 100 + day_of_month($__timeTo()) AND event_name = 'codex.turn_ttft'",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 5
+              },
+              {
+                "color": "red",
+                "value": 10
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 27,
+      "type": "row",
+      "title": "Codex CLI — Usage Over Time",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 41
+      }
+    },
+    {
+      "id": 28,
+      "type": "table",
+      "title": "Codex Tokens Over Time by Model",
+      "description": "Codex CLI events (service_name codex_*). Tokens come from codex.sse_event (response.completed). As for Claude Code, input tokens exclude cache reads and cache writes. Codex CLI 0.164 sends no cost, so this section has no cost panels.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 42
+      },
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "${DS_ATHENA}"
+      },
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "AwsDataCatalog",
+            "database": "${athena_database}",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT date(from_iso8601_timestamp(event_timestamp)) as day, model, count(*) as responses, sum(cast(input_tokens as bigint)) as input_tok, sum(cast(output_tokens as bigint)) as output_tok, sum(cast(cache_read_tokens as bigint)) as cache_read FROM ${athena_database}.logs WHERE year BETWEEN year($__timeFrom()) AND year($__timeTo()) AND year * 10000 + month * 100 + day BETWEEN year($__timeFrom()) * 10000 + month($__timeFrom()) * 100 + day_of_month($__timeFrom()) AND year($__timeTo()) * 10000 + month($__timeTo()) * 100 + day_of_month($__timeTo()) AND event_name = 'codex.sse_event' AND input_tokens IS NOT NULL AND model IS NOT NULL AND event_timestamp IS NOT NULL GROUP BY 1, 2 ORDER BY 1 DESC",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 29,
+      "type": "table",
+      "title": "Codex Token Usage by Type",
+      "description": "Codex CLI events (service_name codex_*). Tokens come from codex.sse_event (response.completed). As for Claude Code, input tokens exclude cache reads and cache writes. Codex CLI 0.164 sends no cost, so this section has no cost panels.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 42
+      },
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "${DS_ATHENA}"
+      },
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "AwsDataCatalog",
+            "database": "${athena_database}",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT model, sum(cast(input_tokens as bigint)) as input_tokens, sum(cast(output_tokens as bigint)) as output_tokens, sum(cast(cache_read_tokens as bigint)) as cache_read, sum(cast(cache_creation_tokens as bigint)) as cache_write FROM ${athena_database}.logs WHERE year BETWEEN year($__timeFrom()) AND year($__timeTo()) AND year * 10000 + month * 100 + day BETWEEN year($__timeFrom()) * 10000 + month($__timeFrom()) * 100 + day_of_month($__timeFrom()) AND year($__timeTo()) * 10000 + month($__timeTo()) * 100 + day_of_month($__timeTo()) AND event_name = 'codex.sse_event' AND input_tokens IS NOT NULL GROUP BY model ORDER BY input_tokens DESC",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 30,
+      "type": "piechart",
+      "title": "Codex Requests by Model",
+      "description": "Codex CLI events (service_name codex_*).",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 50
+      },
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "${DS_ATHENA}"
+      },
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "AwsDataCatalog",
+            "database": "${athena_database}",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT model, count(*) as requests FROM ${athena_database}.logs WHERE year BETWEEN year($__timeFrom()) AND year($__timeTo()) AND year * 10000 + month * 100 + day BETWEEN year($__timeFrom()) * 10000 + month($__timeFrom()) * 100 + day_of_month($__timeFrom()) AND year($__timeTo()) * 10000 + month($__timeTo()) * 100 + day_of_month($__timeTo()) AND event_name = 'codex.api_request' AND model IS NOT NULL GROUP BY model",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right"
+        }
+      }
+    },
+    {
+      "id": 31,
+      "type": "piechart",
+      "title": "Codex Token Type Split",
+      "description": "Codex CLI events (service_name codex_*). Tokens come from codex.sse_event (response.completed). As for Claude Code, input tokens exclude cache reads and cache writes. Codex CLI 0.164 sends no cost, so this section has no cost panels.",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 50
+      },
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "${DS_ATHENA}"
+      },
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "AwsDataCatalog",
+            "database": "${athena_database}",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT 'Input' as type, sum(cast(input_tokens as bigint)) as tokens FROM ${athena_database}.logs WHERE year BETWEEN year($__timeFrom()) AND year($__timeTo()) AND year * 10000 + month * 100 + day BETWEEN year($__timeFrom()) * 10000 + month($__timeFrom()) * 100 + day_of_month($__timeFrom()) AND year($__timeTo()) * 10000 + month($__timeTo()) * 100 + day_of_month($__timeTo()) AND event_name = 'codex.sse_event' AND input_tokens IS NOT NULL UNION ALL SELECT 'Output', sum(cast(output_tokens as bigint)) FROM ${athena_database}.logs WHERE year BETWEEN year($__timeFrom()) AND year($__timeTo()) AND year * 10000 + month * 100 + day BETWEEN year($__timeFrom()) * 10000 + month($__timeFrom()) * 100 + day_of_month($__timeFrom()) AND year($__timeTo()) * 10000 + month($__timeTo()) * 100 + day_of_month($__timeTo()) AND event_name = 'codex.sse_event' AND input_tokens IS NOT NULL UNION ALL SELECT 'Cache Read', sum(cast(cache_read_tokens as bigint)) FROM ${athena_database}.logs WHERE year BETWEEN year($__timeFrom()) AND year($__timeTo()) AND year * 10000 + month * 100 + day BETWEEN year($__timeFrom()) * 10000 + month($__timeFrom()) * 100 + day_of_month($__timeFrom()) AND year($__timeTo()) * 10000 + month($__timeTo()) * 100 + day_of_month($__timeTo()) AND event_name = 'codex.sse_event' AND input_tokens IS NOT NULL UNION ALL SELECT 'Cache Write', sum(cast(cache_creation_tokens as bigint)) FROM ${athena_database}.logs WHERE year BETWEEN year($__timeFrom()) AND year($__timeTo()) AND year * 10000 + month * 100 + day BETWEEN year($__timeFrom()) * 10000 + month($__timeFrom()) * 100 + day_of_month($__timeFrom()) AND year($__timeTo()) * 10000 + month($__timeTo()) * 100 + day_of_month($__timeTo()) AND event_name = 'codex.sse_event' AND input_tokens IS NOT NULL",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right"
+        }
+      }
+    },
+    {
+      "id": 32,
+      "type": "piechart",
+      "title": "Codex Conversations by Terminal Type",
+      "description": "Codex CLI events (service_name codex_*). A conversation is one Codex session: its conversation.id is stored as session_id.",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 50
+      },
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "${DS_ATHENA}"
+      },
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "AwsDataCatalog",
+            "database": "${athena_database}",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT terminal_type, count(distinct session_id) as conversations FROM ${athena_database}.logs WHERE year BETWEEN year($__timeFrom()) AND year($__timeTo()) AND year * 10000 + month * 100 + day BETWEEN year($__timeFrom()) * 10000 + month($__timeFrom()) * 100 + day_of_month($__timeFrom()) AND year($__timeTo()) * 10000 + month($__timeTo()) * 100 + day_of_month($__timeTo()) AND service_name LIKE 'codex%' AND terminal_type IS NOT NULL AND session_id IS NOT NULL GROUP BY terminal_type",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right"
+        }
+      }
+    },
+    {
+      "id": 33,
+      "type": "table",
+      "title": "Codex Activity by Day",
+      "description": "Codex CLI events (service_name codex_*).",
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 58
+      },
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "${DS_ATHENA}"
+      },
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "AwsDataCatalog",
+            "database": "${athena_database}",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT date(from_iso8601_timestamp(event_timestamp)) as day, count_if(event_name = 'codex.user_prompt') as prompts, count_if(event_name = 'codex.api_request') as api_requests, count_if(event_name = 'codex.tool_result') as tool_calls, sum(CASE WHEN event_name = 'codex.sse_event' THEN cast(input_tokens as bigint) END) as input_tok, sum(CASE WHEN event_name = 'codex.sse_event' THEN cast(output_tokens as bigint) END) as output_tok, round(avg(CASE WHEN event_name = 'codex.api_request' THEN try_cast(duration_ms as double) END)/1000.0, 2) as avg_api_seconds FROM ${athena_database}.logs WHERE year BETWEEN year($__timeFrom()) AND year($__timeTo()) AND year * 10000 + month * 100 + day BETWEEN year($__timeFrom()) * 10000 + month($__timeFrom()) * 100 + day_of_month($__timeFrom()) AND year($__timeTo()) * 10000 + month($__timeTo()) * 100 + day_of_month($__timeTo()) AND service_name LIKE 'codex%' AND event_timestamp IS NOT NULL GROUP BY 1 ORDER BY 1 DESC",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 34,
+      "type": "row",
+      "title": "Codex CLI — Efficiency & Ratios",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 66
+      }
+    },
+    {
+      "id": 35,
+      "type": "stat",
+      "title": "Codex Tokens per Conversation",
+      "description": "Codex CLI events (service_name codex_*). Tokens come from codex.sse_event (response.completed). As for Claude Code, input tokens exclude cache reads and cache writes. Codex CLI 0.164 sends no cost, so this section has no cost panels.",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 67
+      },
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "${DS_ATHENA}"
+      },
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "AwsDataCatalog",
+            "database": "${athena_database}",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT round(cast(sum(cast(input_tokens as bigint)) + sum(cast(output_tokens as bigint)) as double) / greatest(count(distinct session_id), 1), 0) as tpc FROM ${athena_database}.logs WHERE year BETWEEN year($__timeFrom()) AND year($__timeTo()) AND year * 10000 + month * 100 + day BETWEEN year($__timeFrom()) * 10000 + month($__timeFrom()) * 100 + day_of_month($__timeFrom()) AND year($__timeTo()) * 10000 + month($__timeTo()) * 100 + day_of_month($__timeTo()) AND event_name = 'codex.sse_event' AND input_tokens IS NOT NULL AND session_id IS NOT NULL",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 36,
+      "type": "stat",
+      "title": "Codex Tool Calls per Conversation",
+      "description": "Codex CLI events (service_name codex_*). A conversation is one Codex session: its conversation.id is stored as session_id.",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 67
+      },
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "${DS_ATHENA}"
+      },
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "AwsDataCatalog",
+            "database": "${athena_database}",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT round(cast(count_if(event_name = 'codex.tool_result') as double) / greatest(count(distinct session_id), 1), 1) as calls FROM ${athena_database}.logs WHERE year BETWEEN year($__timeFrom()) AND year($__timeTo()) AND year * 10000 + month * 100 + day BETWEEN year($__timeFrom()) * 10000 + month($__timeFrom()) * 100 + day_of_month($__timeFrom()) AND year($__timeTo()) * 10000 + month($__timeTo()) * 100 + day_of_month($__timeTo()) AND service_name LIKE 'codex%' AND session_id IS NOT NULL",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              {
+                "color": "orange",
+                "value": null
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 37,
+      "type": "stat",
+      "title": "Codex Cache Hit Ratio",
+      "description": "Codex CLI events (service_name codex_*). Tokens come from codex.sse_event (response.completed). As for Claude Code, input tokens exclude cache reads and cache writes. Codex CLI 0.164 sends no cost, so this section has no cost panels.",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 67
+      },
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "${DS_ATHENA}"
+      },
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "AwsDataCatalog",
+            "database": "${athena_database}",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT round(cast(sum(cast(cache_read_tokens as bigint)) as double) / greatest(sum(cast(cache_read_tokens as bigint)) + sum(cast(cache_creation_tokens as bigint)), 1) * 100, 1) as cache_hit_pct FROM ${athena_database}.logs WHERE year BETWEEN year($__timeFrom()) AND year($__timeTo()) AND year * 10000 + month * 100 + day BETWEEN year($__timeFrom()) * 10000 + month($__timeFrom()) * 100 + day_of_month($__timeFrom()) AND year($__timeTo()) * 10000 + month($__timeTo()) * 100 + day_of_month($__timeTo()) AND event_name = 'codex.sse_event' AND input_tokens IS NOT NULL",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 50
+              },
+              {
+                "color": "green",
+                "value": 80
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 38,
+      "type": "stat",
+      "title": "Codex Avg Tokens per Response",
+      "description": "Codex CLI events (service_name codex_*). Tokens come from codex.sse_event (response.completed). As for Claude Code, input tokens exclude cache reads and cache writes. Codex CLI 0.164 sends no cost, so this section has no cost panels.",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 67
+      },
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "${DS_ATHENA}"
+      },
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "AwsDataCatalog",
+            "database": "${athena_database}",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT round(avg(cast(input_tokens as bigint) + cast(output_tokens as bigint)), 0) as avg_tokens FROM ${athena_database}.logs WHERE year BETWEEN year($__timeFrom()) AND year($__timeTo()) AND year * 10000 + month * 100 + day BETWEEN year($__timeFrom()) * 10000 + month($__timeFrom()) * 100 + day_of_month($__timeFrom()) AND year($__timeTo()) * 10000 + month($__timeTo()) * 100 + day_of_month($__timeTo()) AND event_name = 'codex.sse_event' AND input_tokens IS NOT NULL",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              {
+                "color": "purple",
+                "value": null
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 39,
+      "type": "row",
+      "title": "Codex CLI — Prompts & Tools",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 71
+      }
+    },
+    {
+      "id": 40,
+      "type": "table",
+      "title": "Recent Codex Prompts",
+      "description": "Codex CLI events (service_name codex_*).",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 72
+      },
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "${DS_ATHENA}"
+      },
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "AwsDataCatalog",
+            "database": "${athena_database}",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT event_timestamp as time, substr(session_id, 1, 12) as conversation, model, prompt, prompt_length as length FROM ${athena_database}.logs WHERE year BETWEEN year($__timeFrom()) AND year($__timeTo()) AND year * 10000 + month * 100 + day BETWEEN year($__timeFrom()) * 10000 + month($__timeFrom()) * 100 + day_of_month($__timeFrom()) AND year($__timeTo()) * 10000 + month($__timeTo()) * 100 + day_of_month($__timeTo()) AND event_name = 'codex.user_prompt' ORDER BY event_timestamp DESC LIMIT 25",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 41,
+      "type": "table",
+      "title": "Codex Tool Decisions",
+      "description": "Codex CLI events (service_name codex_*).",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 72
+      },
+      "datasource": {
+        "type": "grafana-athena-datasource",
+        "uid": "${DS_ATHENA}"
+      },
+      "targets": [
+        {
+          "connectionArgs": {
+            "catalog": "AwsDataCatalog",
+            "database": "${athena_database}",
+            "region": "__default",
+            "resultReuseEnabled": true,
+            "resultReuseMaxAgeInMinutes": 5
+          },
+          "format": 1,
+          "rawSQL": "SELECT event_timestamp as time, tool_name, decision, substr(session_id, 1, 12) as conversation FROM ${athena_database}.logs WHERE year BETWEEN year($__timeFrom()) AND year($__timeTo()) AND year * 10000 + month * 100 + day BETWEEN year($__timeFrom()) * 10000 + month($__timeFrom()) * 100 + day_of_month($__timeFrom()) AND year($__timeTo()) * 10000 + month($__timeTo()) * 100 + day_of_month($__timeTo()) AND event_name = 'codex.tool_decision' ORDER BY event_timestamp DESC LIMIT 25",
           "refId": "A"
         }
       ]

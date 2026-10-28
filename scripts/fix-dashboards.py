@@ -20,12 +20,14 @@ HARDCODED_UID = "dfg79xo95ab5sd"
 HARDCODED_DB = "claude_code_telemetry_dev"
 HARDCODED_DATE_FILTER = "year=2026 AND month=3 AND day=17"
 
-# Dynamic date filter: covers the Grafana time picker range
+# Dynamic date filter: covers the Grafana time picker range, including ranges that
+# cross a month or year boundary (compares yyyymmdd numbers built from the partitions).
 # Uses partition projection integers for efficient S3 scanning
 DYNAMIC_DATE_FILTER = (
-    "year BETWEEN year(date($__timeFrom())) AND year(date($__timeTo())) "
-    "AND month BETWEEN month(date($__timeFrom())) AND month(date($__timeTo())) "
-    "AND day BETWEEN day_of_month(date($__timeFrom())) AND day_of_month(date($__timeTo()))"
+    "year BETWEEN year($__timeFrom()) AND year($__timeTo()) "
+    "AND year * 10000 + month * 100 + day BETWEEN "
+    "year($__timeFrom()) * 10000 + month($__timeFrom()) * 100 + day_of_month($__timeFrom()) "
+    "AND year($__timeTo()) * 10000 + month($__timeTo()) * 100 + day_of_month($__timeTo())"
 )
 
 # Templating section to add to each dashboard

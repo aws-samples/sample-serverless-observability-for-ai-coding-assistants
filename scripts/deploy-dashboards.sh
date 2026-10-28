@@ -1,5 +1,5 @@
 #!/bin/bash
-# deploy-dashboards.sh — Push all Claude Code dashboards to Amazon Managed Grafana
+# deploy-dashboards.sh — Push all dashboards (Claude Code + Codex CLI) to Amazon Managed Grafana
 #
 # Usage:
 #   ./deploy-dashboards.sh <GRAFANA_URL> <API_KEY> [ATHENA_DATABASE]
@@ -26,7 +26,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m'
 
 echo "============================================"
-echo " Claude Code Telemetry — Dashboard Deployer"
+echo " AI Coding Assistants — Dashboard Deployer"
 echo "============================================"
 echo ""
 echo "Grafana:    ${GRAFANA_URL}"
