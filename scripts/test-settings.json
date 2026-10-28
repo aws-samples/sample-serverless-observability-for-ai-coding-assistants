@@ -6,6 +6,6 @@
     "OTEL_EXPORTER_OTLP_ENDPOINT": "<REPLACE_WITH_otlp_endpoint_url>",
     "OTEL_EXPORTER_OTLP_HEADERS": "Authorization=Bearer <REPLACE_WITH_telemetry_api_key>",
     "OTEL_METRIC_EXPORT_INTERVAL": "10000",
-    "NODE_TLS_REJECT_UNAUTHORIZED": "0"
+    "NODE_EXTRA_CA_CERTS": "<REPLACE_WITH_absolute_path_to_alb-cert.pem>"
   }
 }

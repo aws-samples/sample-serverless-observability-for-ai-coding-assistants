@@ -1,20 +1,20 @@
-# Threat Model — Claude Code Telemetry Platform
+# Threat Model — Serverless Observability for AI Coding Assistants
 
 **Scope:** PoC deployment (dev environment)
-**Date:** March 2026
+**Date:** March 2026 (updated October 2026)
 **Methodology:** STRIDE + Follow-the-Data + Follow-the-Workflow + Follow-the-User
 
 ---
 
 ## 1. System Overview
 
-The platform collects OpenTelemetry metrics and logs from Claude Code IDE sessions on developer laptops, ingests them through an internet-facing ALB into an OTel Collector running on ECS Fargate, and routes both metrics and logs to Kinesis Data Streams. Firehose delivery streams read from Kinesis, invoke a Lambda function to flatten nested OTLP JSON into flat records, convert to Parquet, and deliver to S3. Amazon Athena queries the Parquet data via Glue Data Catalog, and Amazon Managed Grafana visualizes it using the Athena data source. Authentication is bearer-token-based at the collector layer. Backend traffic from the collector flows through VPC endpoints. Grafana reaches the Athena API via a NAT gateway (internet).
+The platform collects OpenTelemetry metrics and logs from AI coding assistant sessions (Claude Code, Codex CLI) on developer laptops, ingests them through an internet-facing ALB that only admits the configured client CIDRs (`otlp_allowed_cidr_blocks`) into an OTel Collector running on ECS Fargate, and routes both metrics and logs to Kinesis Data Streams. Firehose delivery streams read from Kinesis, invoke a Lambda function to flatten nested OTLP JSON into flat records, convert to Parquet, and deliver to S3. Amazon Athena queries the Parquet data via Glue Data Catalog, and Amazon Managed Grafana visualizes it using the Athena data source. Authentication is bearer-token-based at the collector layer. Backend traffic from the collector flows through VPC endpoints. Grafana reaches the Athena API via a NAT gateway (internet).
 
 ### Components
 
 | Component                    | Purpose                                               | Network                       |
 | ---------------------------- | ----------------------------------------------------- | ----------------------------- |
-| ALB + WAF                    | Public OTLP ingestion, TLS termination, rate limiting | Public subnet                 |
+| ALB + WAF                    | OTLP ingestion from allowed client CIDRs, TLS termination, rate limiting | Public subnet                 |
 | ECS Fargate (OTel Collector) | Receives OTLP, exports to Kinesis Data Streams        | Private subnet, VPC endpoints |
 | Kinesis Data Streams (2)     | Buffered ingestion for metrics and logs               | Via VPC endpoint              |
 | Firehose + Lambda            | Flatten OTLP JSON, convert to Parquet, deliver to S3  | AWS managed                   |
@@ -31,7 +31,7 @@ S3, ECR (api + dkr), Kinesis Streams, CloudWatch Logs (for ECS container logs), 
 ### Trust Boundaries
 
 ```text
-TB1: Internet ↔ ALB (public ingestion endpoint)
+TB1: Internet (allowed client CIDRs only) ↔ ALB (public ingestion endpoint)
 TB2: ALB ↔ ECS Fargate (private subnets)
 TB3: ECS Fargate ↔ Kinesis Data Streams (via VPC endpoint)
 TB4: Kinesis ↔ Firehose + Lambda ↔ S3 (AWS managed, IAM-controlled)
@@ -44,7 +44,7 @@ TB7: Operator workstation ↔ AWS APIs (Terraform, CLI)
 
 | Data Type                                | Sensitivity                           | Where Stored                         |
 | ---------------------------------------- | ------------------------------------- | ------------------------------------ |
-| User prompts (full text)                 | HIGH — may contain code, secrets, PII | S3 Parquet (logs/) — stored unmasked |
+| User prompts (full text)                 | HIGH — may contain code, secrets, PII | S3 Parquet (logs/) — stored unmasked; collector CloudWatch logs (debug exporter) |
 | Token usage / cost metrics               | MEDIUM — usage patterns per user      | S3 Parquet (metrics/)                |
 | Session metadata (user_id, org_id)       | MEDIUM — identifies individuals       | S3 Parquet (both tables)             |
 | Tool decisions (accept/reject)           | LOW                                   | S3 Parquet (logs/)                   |
@@ -72,7 +72,7 @@ TB7: Operator workstation ↔ AWS APIs (Terraform, CLI)
 
 | ID  | Threat                                                        | Component                | Risk   | Notes                                                                                                                                                                   |
 | --- | ------------------------------------------------------------- | ------------------------ | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| T1  | MITM on telemetry in transit                                  | Client → ALB             | LOW    | Self-signed TLS; clients disable cert validation. MITM trivial on same network. Would be HIGH in production.                                                            |
+| T1  | MITM on telemetry in transit                                  | Client → ALB             | LOW    | Self-signed TLS. The certificate names the ALB, so clients pin it (Claude Code `NODE_EXTRA_CA_CERTS`, Codex `tls.ca-certificate`) and keep validation on. A client that disables validation is still exposed. Would be HIGH in production without an ACM certificate. |
 | T2  | False metric/log injection to corrupt dashboards              | Collector → Kinesis → S3 | HIGH   | Valid bearer token allows arbitrary metric values, labels, and log content.                                                                                             |
 | T3  | Tampering with Terraform state                                | Local tfstate            | MEDIUM | Local, unencrypted, contains resource ARNs and bearer token.                                                                                                            |
 | T4  | Modifying collector config to exfiltrate data                 | ECS task definition      | LOW    | Requires ECS/ECR write permissions.                                                                                                                                     |
@@ -101,7 +101,7 @@ TB7: Operator workstation ↔ AWS APIs (Terraform, CLI)
 
 | ID   | Threat                           | Component               | Risk   | Notes                                                                                                                                                                                      |
 | ---- | -------------------------------- | ----------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| DoS1 | Volumetric attack on ALB         | ALB (public)            | MEDIUM | WAF rate limit 2000 req/5min per IP. Distributed attacks bypass this.                                                                                                                      |
+| DoS1 | Volumetric attack on ALB         | ALB (public)            | MEDIUM | Security group admits only `otlp_allowed_cidr_blocks`. WAF rate limit 2000 req/5min per IP; distributed attacks from allowed ranges bypass this. The WAF body-size rule only counts (OTLP batches exceed 8 KB); the collector caps bodies at 20 MiB by default. |
 | DoS2 | Data volume flood (cost bomb)    | Kinesis → Firehose → S3 | HIGH   | Attacker with valid bearer token can flood the pipeline with data. Costs scale with Kinesis shard hours, Firehose ingestion volume, S3 storage, Lambda invocations, and Athena scan bytes. |
 | DoS3 | ALB deletion protection disabled | ALB                     | LOW    | Accidental terraform destroy removes ingestion endpoint.                                                                                                                                   |
 
@@ -124,7 +124,7 @@ Developer Laptop → [Internet] → ALB:443 → [VPC Public Subnet] → ECS:4318
 
 | Hop             | Encryption            | Auth                      | Risk                                                 |
 | --------------- | --------------------- | ------------------------- | ---------------------------------------------------- |
-| Laptop → ALB    | TLS 1.3 (self-signed) | None at ALB               | Client disables cert validation — MITM possible (T1) |
+| Laptop → ALB    | TLS 1.2/1.3 (self-signed, pinned by client) | Source CIDR allowlist     | MITM possible only if the client disables validation (T1) |
 | ALB → Collector | HTTP (within VPC)     | Bearer token at collector | Token in cleartext env var (D3)                      |
 
 ### 3.2 Metrics Flow
@@ -169,7 +169,7 @@ Grafana → [NAT Gateway] → [Internet] → Athena API → S3 (query results)
 | S3 Parquet (metrics/ + logs/)     | AES-256 (AWS-managed) | Glacier 90d, Expire 365d | Contains unmasked prompts (D1, D5). Single data store for all telemetry. |
 | Kinesis Data Streams              | AWS-managed           | 24 hours                 | Transient buffer only                                                    |
 | Terraform state                   | None                  | Local file               | Plaintext secrets (D2)                                                   |
-| CloudWatch Logs (ECS containers)  | AWS-managed           | 14 days                  | Debugging only — no telemetry data                                       |
+| CloudWatch Logs (ECS containers)  | AWS-managed           | 30 days                  | The collector's `debug` exporter (`verbosity: detailed`) writes every received log record and metric here, prompt text included (D1) |
 | CloudWatch Logs (Firehose errors) | AWS-managed           | 14 days                  | Error records only                                                       |
 
 ---
@@ -191,7 +191,7 @@ Grafana → [NAT Gateway] → [Internet] → Athena API → S3 (query results)
 | Step                               | Threat                                           | Risk   |
 | ---------------------------------- | ------------------------------------------------ | ------ |
 | Developer receives bearer token    | Shared out-of-band, no rotation                  | S1, S2 |
-| Set NODE_TLS_REJECT_UNAUTHORIZED=0 | Disables all TLS validation for the process      | T1     |
+| Install alb-cert.pem as a trusted CA | File distributed out of band; a client that disables validation instead is open to MITM | T1     |
 | Claude Code sends prompts          | Full prompt text transmitted and stored unmasked | D1, D5 |
 | Token embedded in env var          | Visible in process listing, shell history        | S1     |
 
@@ -207,7 +207,7 @@ Grafana → [NAT Gateway] → [Internet] → Athena API → S3 (query results)
 
 ## 5. Follow the User
 
-### 5.1 Developer (Claude Code User)
+### 5.1 Developer (Claude Code / Codex CLI User)
 
 | Action                     | Data Exposed                                          | Risk   |
 | -------------------------- | ----------------------------------------------------- | ------ |
@@ -230,8 +230,8 @@ Grafana → [NAT Gateway] → [Internet] → Athena API → S3 (query results)
 | Action                  | Prerequisite                          | Impact                                                 |
 | ----------------------- | ------------------------------------- | ------------------------------------------------------ |
 | Steal bearer token      | Network access or endpoint compromise | Full write access to telemetry pipeline (S1, T2, DoS2) |
-| MITM on self-signed TLS | Same network as developer             | Capture bearer token and all telemetry (T1, D1)        |
-| Enumerate ALB endpoint  | Public DNS                            | Attempt brute force or DoS (DoS1)                      |
+| MITM on self-signed TLS | Same network as a developer whose client disables validation | Capture bearer token and all telemetry (T1, D1)        |
+| Reach the ALB endpoint  | A source IP inside `otlp_allowed_cidr_blocks` | Attempt token brute force or DoS (DoS1)            |
 
 ### 5.4 Attacker (Insider — Compromised Developer)
 
@@ -258,7 +258,7 @@ Grafana → [NAT Gateway] → [Internet] → Athena API → S3 (query results)
 
 The following are explicitly accepted for the PoC and must be remediated before production:
 
-1. Self-signed TLS with disabled certificate validation (T1)
+1. Self-signed TLS distributed out of band; clients pin the certificate instead of disabling validation (T1)
 2. Shared bearer token with no rotation (S1, S2)
 3. No per-user identity at ingestion (S3, R1)
 4. CloudTrail disabled (R2)
@@ -274,3 +274,4 @@ The following threats were identified and fixed during the PoC:
 
 1. **T6 — Lambda arbitrary key injection / field overwrite:** Attribute allowlist added to `flatten.py` (VULN-014)
 2. **S6 — gRPC OIDC bypass:** gRPC listener rule and receiver removed (VULN-015)
+3. **DoS1 / S1 — endpoint open to the whole internet:** ALB ingress restricted to `otlp_allowed_cidr_blocks` (VULN-017)

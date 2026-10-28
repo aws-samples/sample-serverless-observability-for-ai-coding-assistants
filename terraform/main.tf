@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# Root Module — Claude Code Telemetry Platform
+# Root Module — Serverless Observability for AI Coding Assistants
 # Architecture: Collector → Kinesis → Firehose → S3 (Parquet) → Athena → Grafana
 # -----------------------------------------------------------------------------
 
@@ -16,10 +16,20 @@ locals {
 module "vpc" {
   source = "./modules/vpc"
 
-  environment           = var.environment
-  project_name          = var.project_name
-  corporate_cidr_blocks = var.corporate_cidr_blocks
-  tags                  = var.tags
+  environment              = var.environment
+  project_name             = var.project_name
+  corporate_cidr_blocks    = var.corporate_cidr_blocks
+  otlp_allowed_cidr_blocks = var.otlp_allowed_cidr_blocks
+  tags                     = var.tags
+}
+
+# Warn (plan/apply still proceed) when the OTLP endpoint is opened to the whole internet:
+# the shared bearer token would then be the only control in front of the collector.
+check "otlp_endpoint_not_world_open" {
+  assert {
+    condition     = !contains(var.otlp_allowed_cidr_blocks, "0.0.0.0/0")
+    error_message = "otlp_allowed_cidr_blocks contains 0.0.0.0/0, so anyone on the internet can reach the OTLP endpoint and only the shared bearer token protects it. Prefer your clients' egress CIDRs."
+  }
 }
 
 # -----------------------------------------------------------------------------
