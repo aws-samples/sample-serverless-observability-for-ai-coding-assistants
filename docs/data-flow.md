@@ -46,7 +46,7 @@ sequenceDiagram
     Col->>KL: OTLP JSON<br/>(via VPC endpoint)
     KL->>FH: Read stream
     FH->>Lam: Base64 OTLP JSON batch
-    Note over Lam: Extract event_name,<br/>user_id, session_id,<br/>prompt, cost_usd,<br/>input/output_tokens,<br/>duration_ms, model,<br/>tool_name, decision<br/>→ flat JSON (24 cols)
+    Note over Lam: Extract event_name,<br/>user_id, session_id,<br/>prompt, cost_usd,<br/>input/output_tokens,<br/>duration_ms, model,<br/>tool_name, decision,<br/>status_code, error<br/>(Codex names mapped)<br/>→ flat JSON (26 cols)
     Lam->>FH: Flat JSON records
     Note over FH: JSON → Parquet<br/>(Snappy, Glue schema)
     FH->>S3: logs/year=YYYY/<br/>month=MM/day=DD/
