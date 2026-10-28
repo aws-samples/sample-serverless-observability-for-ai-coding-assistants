@@ -47,6 +47,17 @@ resource "aws_wafv2_web_acl" "main" {
       managed_rule_group_statement {
         name        = "AWSManagedRulesCommonRuleSet"
         vendor_name = "AWS"
+
+        # SizeRestrictions_BODY blocks request bodies over 8 KB. OTLP export batches from
+        # Claude Code and Codex routinely exceed that, so blocking drops real telemetry.
+        # Count instead; the collector's OTLP/HTTP receiver still caps each request body
+        # (max_request_body_size, default 20 MiB).
+        rule_action_override {
+          name = "SizeRestrictions_BODY"
+          action_to_use {
+            count {}
+          }
+        }
       }
     }
 

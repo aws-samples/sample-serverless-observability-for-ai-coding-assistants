@@ -1,7 +1,7 @@
-# Vulnerability Register — Claude Code Telemetry Platform
+# Vulnerability Register — Serverless Observability for AI Coding Assistants
 
 **Scope:** PoC deployment (dev environment)
-**Date:** March 2026
+**Date:** March 2026 (updated October 2026)
 **Derived from:** [THREAT-MODEL.md](THREAT-MODEL.md)
 
 ---
@@ -24,7 +24,7 @@
 
 - **Threat IDs:** S1, S2, S3, R1
 - **Files:** `terraform/terraform.tfvars`, `terraform/modules/ecs-collector/main.tf`, `terraform/collector/otel-collector-config.yaml`
-- **Description:** All Claude Code clients share a single static bearer token. No expiry, no rotation, no per-user binding. Any client can submit telemetry as any user_id or org_id.
+- **Description:** All clients (Claude Code and Codex CLI) share a single static bearer token. No expiry, no rotation, no per-user binding. Any client can submit telemetry as any user_id or org_id.
 - **Impact:** Cannot attribute telemetry to a specific developer. Token compromise grants permanent write access. Dashboard integrity depends on client honesty.
 - **Remediation:**
   1. Implement OIDC JWT validation (e.g., Cognito)
@@ -46,17 +46,6 @@
   4. Add Athena query logging to track who queries prompt data
 - **Status:** OPEN — HIGH priority (regression from previous CloudWatch-based architecture)
 
-### VULN-003: Self-Signed TLS with Disabled Certificate Validation
-
-- **Threat ID:** T1
-- **Files:** `terraform/modules/alb/main.tf`, `docs/DEPLOYMENT.md`
-- **Description:** The ALB uses a self-signed TLS certificate. Clients must set `NODE_TLS_REJECT_UNAUTHORIZED=0`, which disables ALL TLS certificate validation for the entire Node.js process.
-- **Impact:** MITM attack on the same network can intercept the bearer token and all telemetry including prompts.
-- **Remediation:**
-  1. Obtain a proper ACM certificate for a custom domain
-  2. Remove NODE_TLS_REJECT_UNAUTHORIZED=0 from all client configurations
-- **Status:** OPEN (accepted for PoC)
-
 ### VULN-004: Data Volume Flood (Cost Bomb)
 
 - **Threat IDs:** DoS2, T2
@@ -68,7 +57,7 @@
   2. Set Kinesis stream throughput limits and CloudWatch alarms on IncomingRecords
   3. Add S3 bucket size alarms
   4. Set Athena workgroup byte-scan limits (already configured at 10 GB)
-  5. Add WAF request body size limits
+  5. Bound request size at the collector, not the WAF: the WAF's `SizeRestrictions_BODY` rule (8 KB) blocked normal Claude Code and Codex export batches, so it now only counts. The collector's OTLP/HTTP receiver caps each body (`max_request_body_size`, default 20 MiB); lower it if you need a tighter bound
 - **Status:** OPEN
 
 ### VULN-012: S3 Parquet Contains Unmasked Prompts
@@ -190,9 +179,30 @@
 - **Fix applied:** Removed the `grpc_passthrough` ALB listener rule, removed the gRPC receiver from the OTel Collector config, removed port 4317 from the ECS task definition and Dockerfile, and deleted the associated VPC security group rules (`alb_to_collector_grpc`, `collector_grpc`). Only HTTP/protobuf ingestion on port 4318 remains.
 - **Status:** FIXED (March 2026)
 
+### VULN-017: OTLP Endpoint Reachable from the Entire Internet — FIXED
+
+- **Threat IDs:** DoS1, S1, S2
+- **Components:** ALB security group (`terraform/modules/vpc/security_groups.tf`), root variables (`terraform/variables.tf`)
+- **Description:** The ALB security group accepted TCP 443 from `0.0.0.0/0`. Anyone on the internet could reach the collector, so the shared static bearer token (VULN-001) was the only control in front of the pipeline, and a leaked token was usable from anywhere.
+- **Impact:** Token brute-force and replay from any network, and a larger surface for volumetric abuse (DoS1, DoS2).
+- **Fix applied:** Added the required variable `otlp_allowed_cidr_blocks` (validated as IPv4 CIDRs). The security group creates one HTTPS ingress rule per allowed range, and a Terraform `check` block warns if `0.0.0.0/0` is configured.
+- **Residual risk:** Allowed ranges such as corporate NAT or VPN egress are shared by many machines; the bearer token remains the per-request control.
+- **Status:** FIXED (October 2026)
+
 ---
 
 ## MITIGATED Vulnerabilities
+
+### VULN-003: Self-Signed TLS Certificate
+
+- **Threat ID:** T1
+- **Files:** `terraform/modules/alb/main.tf`, `terraform/outputs.tf`, `docs/DEPLOYMENT.md`, `scripts/*.json`, `scripts/codex-otel-config.toml`
+- **Description:** Without `acm_certificate_arn`, the ALB uses a self-signed certificate. It previously carried only `CN=telemetry.dev.internal` and no subjectAltName, so clients had to disable certificate validation (`NODE_TLS_REJECT_UNAUTHORIZED=0` for Claude Code, which turns validation off for the whole process). Codex CLI has no option to skip validation, so it could not connect at all.
+- **Impact:** A client that disables validation can be intercepted on the same network, exposing the bearer token and all telemetry including prompts.
+- **Mitigation applied:** The certificate now names the ALB's DNS name in its subjectAltName and is exported as the `self_signed_certificate_pem` output. Clients trust that file and keep validation on: `NODE_EXTRA_CA_CERTS` for Claude Code, `tls.ca-certificate` for Codex, `--cacert` for curl. All client examples were updated.
+- **Residual risk:** The certificate is distributed out of band, cannot be revoked, and has to be redistributed when it is reissued. A client still configured with `NODE_TLS_REJECT_UNAUTHORIZED=0` remains exposed.
+- **Remediation for production:** Use an ACM certificate for a domain you control (`acm_certificate_arn`), which also enables ALB-layer OIDC (VULN-016).
+- **Status:** MITIGATED (October 2026)
 
 ### VULN-016: Zero ALB-Layer Auth When ACM Certificate Absent
 
@@ -212,7 +222,7 @@
 | ------------------------- | --------------------------------------------- | ----------- |
 | P1 — Before production    | VULN-001 (shared bearer token → OIDC)         | 1-2 weeks   |
 | P1 — Before production    | VULN-002 (PII redaction — REOPENED)           | 3-5 days    |
-| P1 — Before production    | VULN-003 (self-signed TLS)                    | 1 day       |
+| P1 — Before production    | VULN-003 (self-signed TLS → ACM certificate; mitigated by pinning) | 1 day       |
 | P1 — Before production    | VULN-007 (CloudTrail)                         | 1 day       |
 | P1 — Before production    | VULN-012 (unmasked prompts in S3)             | 3-5 days    |
 | P2 — Production hardening | VULN-004 (data volume cost bomb)              | 2-3 days    |
@@ -224,3 +234,4 @@
 | P3 — Nice to have         | VULN-009, VULN-010, VULN-011                  | 1 day total |
 | FIXED                     | VULN-014 (Lambda key injection/overwrite)     | Done        |
 | FIXED                     | VULN-015 (gRPC OIDC bypass)                   | Done        |
+| FIXED                     | VULN-017 (OTLP endpoint open to the internet) | Done        |

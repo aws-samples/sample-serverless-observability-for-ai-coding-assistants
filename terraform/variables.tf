@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# Root-Level Variables — Claude Code Telemetry Platform
+# Root-Level Variables — Serverless Observability for AI Coding Assistants
 # -----------------------------------------------------------------------------
 
 variable "aws_region" {
@@ -27,6 +27,16 @@ variable "project_name" {
 variable "corporate_cidr_blocks" {
   description = "List of corporate network CIDR blocks allowed to access Grafana dashboards"
   type        = list(string)
+}
+
+variable "otlp_allowed_cidr_blocks" {
+  description = "Public IPv4 CIDR blocks allowed to reach the OTLP endpoint (ALB, TCP 443): the egress ranges your developers' machines use (corporate NAT, VPN). 0.0.0.0/0 opens the endpoint to the whole internet."
+  type        = list(string)
+
+  validation {
+    condition     = length(var.otlp_allowed_cidr_blocks) > 0 && alltrue([for c in var.otlp_allowed_cidr_blocks : can(cidrnetmask(c))])
+    error_message = "otlp_allowed_cidr_blocks must list at least one valid IPv4 CIDR block, for example [\"203.0.113.0/24\"]."
+  }
 }
 
 variable "tags" {

@@ -4,7 +4,7 @@
 
 ```mermaid
 sequenceDiagram
-    participant Dev as Claude Code<br/>(Developer Laptop)
+    participant Dev as Claude Code / Codex CLI<br/>(Developer Laptop)
     participant ALB as ALB + WAF<br/>(Public Subnet)
     participant Col as OTel Collector<br/>(ECS Fargate)
     participant KM as Kinesis<br/>metrics stream
@@ -13,7 +13,7 @@ sequenceDiagram
     participant S3 as S3 Parquet<br/>metrics/
 
     Dev->>ALB: OTLP/HTTP protobuf<br/>metrics every 10s
-    Note over ALB: TLS termination<br/>WAF rate limiting
+    Note over ALB: Allowed client CIDRs only<br/>TLS termination<br/>WAF rate limiting
     ALB->>Col: HTTP :4318<br/>(within VPC)
     Note over Col: Bearer token auth<br/>deltatocumulative<br/>batch (1024 / 10s)
     Col->>KM: OTLP JSON<br/>(via VPC endpoint)
@@ -31,7 +31,7 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    participant Dev as Claude Code<br/>(Developer Laptop)
+    participant Dev as Claude Code / Codex CLI<br/>(Developer Laptop)
     participant ALB as ALB + WAF<br/>(Public Subnet)
     participant Col as OTel Collector<br/>(ECS Fargate)
     participant KL as Kinesis<br/>logs stream
@@ -40,7 +40,7 @@ sequenceDiagram
     participant S3 as S3 Parquet<br/>logs/
 
     Dev->>ALB: OTLP/HTTP protobuf<br/>events every 5s
-    Note over ALB: TLS termination
+    Note over ALB: Allowed client CIDRs only<br/>TLS termination
     ALB->>Col: HTTP :4318
     Note over Col: Bearer token auth<br/>batch (1024 / 10s)
     Col->>KL: OTLP JSON<br/>(via VPC endpoint)
@@ -82,7 +82,7 @@ sequenceDiagram
 
 ```mermaid
 graph LR
-    CC[Claude Code Client] -->|OTLP| COL[OTel Collector]
+    CC[Claude Code / Codex CLI] -->|OTLP| COL[OTel Collector]
 
     COL -->|metrics pipeline| KM[Kinesis metrics]
     COL -->|logs pipeline| KL[Kinesis logs]
@@ -99,10 +99,11 @@ graph LR
         L2[api_request<br/>model, cost, tokens, duration]
         L3[tool_decision<br/>tool name, accept/reject]
         L4[api_error<br/>error details]
+        L5[codex.* events<br/>user_prompt, api_request,<br/>sse_event, tool_decision, tool_result]
     end
 
     KM --- M1 & M2 & M3 & M4
-    KL --- L1 & L2 & L3 & L4
+    KL --- L1 & L2 & L3 & L4 & L5
 
     KM --> FHM[Firehose + Lambda] --> S3M[S3 metrics/]
     KL --> FHL[Firehose + Lambda] --> S3L[S3 logs/]

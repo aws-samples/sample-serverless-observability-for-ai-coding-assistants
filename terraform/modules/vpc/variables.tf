@@ -39,3 +39,8 @@ variable "corporate_cidr_blocks" {
   type        = list(string)
   default     = []
 }
+
+variable "otlp_allowed_cidr_blocks" {
+  description = "IPv4 CIDR blocks allowed to reach the ALB on TCP 443 (OTLP ingestion)"
+  type        = list(string)
+}

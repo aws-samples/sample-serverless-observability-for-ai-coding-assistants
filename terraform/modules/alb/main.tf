@@ -84,6 +84,11 @@ resource "tls_self_signed_cert" "self_signed" {
     organization = var.project_name
   }
 
+  # TLS clients match the hostname they dial against subjectAltName, not the CN. With the
+  # ALB's DNS name here, clients can trust this certificate (see the
+  # self_signed_certificate_pem output) instead of disabling certificate validation.
+  dns_names = [aws_lb.main.dns_name]
+
   validity_period_hours = 8760 # 1 year
 
   allowed_uses = [

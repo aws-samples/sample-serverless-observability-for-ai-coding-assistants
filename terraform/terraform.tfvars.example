@@ -14,6 +14,12 @@ project_name = "claude-code-telemetry"
 # Corporate network CIDRs allowed to access Grafana
 corporate_cidr_blocks = ["10.0.0.0/8"]
 
+# Public IPv4 CIDRs allowed to reach the OTLP endpoint (ALB, TCP 443): the egress
+# ranges your developers' machines use (corporate NAT, VPN). Find a machine's
+# egress IP with: curl https://checkip.amazonaws.com
+# 0.0.0.0/0 opens the endpoint to the whole internet (terraform plan warns).
+otlp_allowed_cidr_blocks = ["203.0.113.0/24"]
+
 # Bearer token for authenticating OTLP clients
 # Generate a strong random string. Clients must set:
 #   OTEL_EXPORTER_OTLP_HEADERS="Authorization=Bearer <this-value>"

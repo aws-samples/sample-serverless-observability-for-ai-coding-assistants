@@ -4,7 +4,7 @@
 # -----------------------------------------------------------------------------
 
 # --- sg-alb: Application Load Balancer ---
-# Inbound: TCP 443 from 0.0.0.0/0 (public OTLP endpoint)
+# Inbound: TCP 443 from var.otlp_allowed_cidr_blocks (client egress ranges) only
 # Outbound: TCP 4318 (HTTP/protobuf), TCP 13133 (health) to sg-collector
 resource "aws_security_group" "alb" {
   name        = "${var.project_name}-${var.environment}-sg-alb"
@@ -17,12 +17,14 @@ resource "aws_security_group" "alb" {
 }
 
 resource "aws_vpc_security_group_ingress_rule" "alb_https" {
+  for_each = toset(var.otlp_allowed_cidr_blocks)
+
   security_group_id = aws_security_group.alb.id
-  description       = "Allow HTTPS/OTLP from internet"
+  description       = "Allow HTTPS/OTLP from allowed client networks"
   ip_protocol       = "tcp"
   from_port         = 443
   to_port           = 443
-  cidr_ipv4         = "0.0.0.0/0"
+  cidr_ipv4         = each.value
 
   tags = merge(var.tags, {
     Name = "alb-inbound-https"

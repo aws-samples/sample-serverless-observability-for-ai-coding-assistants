@@ -1,0 +1,19 @@
+# Codex CLI telemetry settings for this platform.
+# Merge into ~/.codex/config.toml ($CODEX_HOME/config.toml). An [otel] table in a
+# project's .codex/config.toml is ignored.
+#
+# Also export the bearer token where Codex runs (config.toml does not expand ${VAR}):
+#   export OTEL_EXPORTER_OTLP_HEADERS="Authorization=Bearer <REPLACE_WITH_telemetry_api_key>"
+#
+# alb-cert.pem comes from: terraform output -raw self_signed_certificate_pem > alb-cert.pem
+# With an ACM certificate (acm_certificate_arn), remove the tls tables.
+
+[otel]
+environment = "dev"
+log_user_prompt = false # true stores prompt text in the logs table's prompt column
+exporter = { otlp-http = { endpoint = "<REPLACE_WITH_otlp_endpoint_url>/v1/logs", protocol = "binary", tls = { ca-certificate = "<REPLACE_WITH_absolute_path_to_alb-cert.pem>" } } }
+metrics_exporter = { otlp-http = { endpoint = "<REPLACE_WITH_otlp_endpoint_url>/v1/metrics", protocol = "binary", tls = { ca-certificate = "<REPLACE_WITH_absolute_path_to_alb-cert.pem>" } } }
+trace_exporter = "none" # the collector has no traces pipeline
+
+[shell_environment_policy]
+exclude = ["OTEL_*"] # keep the bearer token out of the commands Codex runs

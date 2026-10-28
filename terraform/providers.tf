@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# Provider Configuration — Claude Code Telemetry Platform
+# Provider Configuration — Serverless Observability for AI Coding Assistants
 # Requirements: 9.1, 11.2
 # -----------------------------------------------------------------------------
 

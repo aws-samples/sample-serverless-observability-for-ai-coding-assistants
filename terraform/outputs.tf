@@ -24,3 +24,8 @@ output "athena_workgroup" {
   description = "Athena workgroup for querying telemetry"
   value       = aws_athena_workgroup.telemetry.name
 }
+
+output "self_signed_certificate_pem" {
+  description = "Self-signed ALB certificate (PEM) for clients to trust; empty when acm_certificate_arn is set. Save it with: terraform output -raw self_signed_certificate_pem > alb-cert.pem"
+  value       = module.alb.self_signed_certificate_pem
+}
