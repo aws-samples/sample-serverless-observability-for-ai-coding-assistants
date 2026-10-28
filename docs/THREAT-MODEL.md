@@ -166,7 +166,7 @@ Grafana → [NAT Gateway] → [Internet] → Athena API → S3 (query results)
 
 | Store                             | Encryption            | Retention                | Risk                                                                     |
 | --------------------------------- | --------------------- | ------------------------ | ------------------------------------------------------------------------ |
-| S3 Parquet (metrics/ + logs/)     | AES-256 (AWS-managed) | Glacier 90d, Expire 365d | Contains unmasked prompts (D1, D5). Single data store for all telemetry. |
+| S3 Parquet (metrics/ + logs/)     | AES-256 (AWS-managed) | Glacier 90d, Expire 365d | Contains unmasked prompts (D1, D5). The `error` column holds up to 500 characters of error text; for a failed Codex stream event that text comes from the event payload and can include model output. Single data store for all telemetry. |
 | Kinesis Data Streams              | AWS-managed           | 24 hours                 | Transient buffer only                                                    |
 | Terraform state                   | None                  | Local file               | Plaintext secrets (D2)                                                   |
 | CloudWatch Logs (ECS containers)  | AWS-managed           | 30 days                  | The collector's `debug` exporter (`verbosity: detailed`) writes every received log record and metric here, prompt text included (D1) |

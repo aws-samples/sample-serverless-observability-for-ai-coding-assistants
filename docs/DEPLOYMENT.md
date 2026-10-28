@@ -265,9 +265,21 @@ export OTEL_EXPORTER_OTLP_HEADERS="Authorization=Bearer <telemetry_api_key>"
 - `codex exec` hides exporter errors. Set `RUST_LOG=opentelemetry_otlp=debug,opentelemetry_sdk=info` to see TLS, `401` and `403` failures.
 - With an ACM certificate, drop the `tls` tables.
 
-**What lands where.** Codex events go to the `logs` table with `event_name` values such as `codex.user_prompt`, `codex.api_request`, `codex.sse_event`, `codex.tool_decision` and `codex.tool_result`; `service_name` is `codex_exec` for `codex exec`. Columns whose names match Claude Code's are filled: `event_name`, `event_timestamp`, `model`, `terminal_type`, `prompt` (with `log_user_prompt = true`), `tool_name`, `decision` and `duration_ms`. Codex reports its conversation ID and token counts under other attribute names, so `session_id` and the token columns stay empty for Codex rows. Codex CLI 0.164 sends no cost and no per-person ID, so `cost_usd` and `user_id` stay empty too. Most Codex metrics are histograms, which the flatten Lambda stores with `metric_value = 0`.
+**What lands where.** Codex events go to the `logs` table with `event_name` values such as `codex.user_prompt`, `codex.api_request`, `codex.sse_event`, `codex.tool_decision` and `codex.tool_result`; `service_name` is `codex_exec` for `codex exec`. The flatten Lambda copies Codex's attribute names onto the columns Claude Code uses:
 
-The Grafana dashboards have no Codex panels. Query Codex data in Athena:
+| Codex attribute | Column | Notes |
+|---|---|---|
+| `conversation.id` | `session_id` | One Codex conversation |
+| `input_token_count` | `input_tokens` | Minus `cached_token_count` and `cache_write_token_count`, because Claude Code reports `input_tokens` without cache reads and writes |
+| `output_token_count` | `output_tokens` | |
+| `cached_token_count` | `cache_read_tokens` | |
+| `cache_write_token_count` | `cache_creation_tokens` | |
+| `http.response.status_code` | `status_code` | On `codex.api_request` |
+| `error.message` | `error` | On failed `codex.api_request` and `codex.sse_event`. Cut to 500 characters, because a failed stream event's message holds the whole event payload, which can include model output |
+
+Token counts arrive on `codex.sse_event` rows for completed responses (`event.kind` = `response.completed`). `event_name`, `event_timestamp`, `model`, `terminal_type`, `prompt` (with `log_user_prompt = true`), `tool_name`, `decision` and `duration_ms` are filled directly. Codex CLI 0.164 sends no cost, so `cost_usd` stays empty. `user_id` stays empty too: Codex's `user.account_id` names the ChatGPT account, which several users can share (Codex tracks a separate account-user ID), so it isn't stored as `user_id`. Rows ingested before this mapping have no Codex session or token values. Most Codex metrics are histograms, which the flatten Lambda stores with `metric_value = 0`.
+
+Claude Code's `api_error` rows also fill `status_code` and `error`. The Grafana dashboards have no Codex panels; query Codex data in Athena:
 
 ```sql
 -- Codex events for one day; adjust the date
@@ -307,10 +319,13 @@ The Lambda function (`terraform/lambda/flatten.py`) is invoked by Firehose as a 
 
 1. Receives base64-encoded OTLP JSON records from Firehose
 2. Extracts nested resource attributes, scope attributes, and log/metric attributes
-3. Flattens them into flat key-value records (one record per log entry or metric data point)
-4. Returns flat JSON that Firehose converts to Parquet using the Glue table schema
+3. For Codex CLI records (`service.name` starting with `codex`), copies Codex attribute names onto the Claude Code columns (see [What lands where](#step-10-configure-codex-cli-clients))
+4. Keeps only allowlisted attributes and flattens them into flat key-value records (one record per log entry or metric data point)
+5. Returns flat JSON that Firehose converts to Parquet using the Glue table schema
 
 This eliminates the need for complex Athena views or `UNNEST` queries — the `logs` and `metrics` tables have flat columns like `event_name`, `user_id`, `cost_usd`, `prompt`, etc.
+
+If you deployed before the `status_code` and `error` columns were added to the `logs` table, run `terraform apply` so the Glue table and the Lambda change together. Parquet files written before the change read those columns as `NULL`.
 
 ---
 

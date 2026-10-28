@@ -25,6 +25,8 @@ LOGS_ALLOWED_ATTRS = {
     "tool_name",
     "decision",
     "speed",
+    "status_code",
+    "error",
 }
 
 METRICS_ALLOWED_ATTRS = {
@@ -34,6 +36,26 @@ METRICS_ALLOWED_ATTRS = {
     "model",
     "type",
 }
+
+# Codex CLI reports some of the same facts as Claude Code under other attribute
+# names (shown after dots become underscores). They are copied onto the existing
+# columns so both assistants can be queried alike. input_tokens is derived in
+# map_codex_attrs because Codex counts it differently. Codex's user.account_id
+# is not mapped to user_id: it names the ChatGPT account, which several users
+# can share (Codex tracks a separate account-user ID), so it can't tell
+# developers apart.
+CODEX_LOGS_ATTR_MAP = {
+    "conversation_id": "session_id",
+    "output_token_count": "output_tokens",
+    "cached_token_count": "cache_read_tokens",
+    "cache_write_token_count": "cache_creation_tokens",
+    "http_response_status_code": "status_code",
+    "error_message": "error",
+}
+
+# Codex puts a failed stream event's whole JSON payload in error.message, which can
+# include model output. Error text is cut to this length before it is stored.
+MAX_ERROR_CHARS = 500
 
 
 def handler(event, context):
@@ -81,8 +103,12 @@ def flatten_otlp(data):
             for lr in sl.get("logRecords", sl.get("logrecords", [])):
                 record = dict(base)
                 record["event_type"] = get_body(lr)
-                attrs = extract_attrs(lr.get("attributes", []))
+                attrs = sanitize_keys(extract_attrs(lr.get("attributes", [])))
+                if is_codex(base["service_name"]):
+                    attrs = map_codex_attrs(attrs)
                 attrs = filter_keys(attrs, LOGS_ALLOWED_ATTRS)
+                if "error" in attrs:
+                    attrs["error"] = str(attrs["error"])[:MAX_ERROR_CHARS]
                 record.update(attrs)
                 flat.append(record)
 
@@ -143,6 +169,35 @@ def filter_keys(attrs, allowed):
 
 def sanitize_keys(d):
     return {k.replace(".", "_"): v for k, v in d.items()}
+
+
+def is_codex(service_name):
+    return str(service_name).startswith("codex")
+
+
+def map_codex_attrs(attrs):
+    """Copy Codex CLI attributes (sanitized keys) onto Claude Code's column names.
+
+    Codex's input_token_count also counts cache reads and cache writes, which
+    Claude Code reports outside input_tokens, so both are subtracted from it.
+    """
+    mapped = dict(attrs)
+    for src, dst in CODEX_LOGS_ATTR_MAP.items():
+        if src in attrs and dst not in attrs:
+            mapped[dst] = attrs[src]
+    total = to_int(attrs.get("input_token_count"))
+    if total is not None and "input_tokens" not in attrs:
+        cached = to_int(attrs.get("cached_token_count")) or 0
+        written = to_int(attrs.get("cache_write_token_count")) or 0
+        mapped["input_tokens"] = str(max(total - cached - written, 0))
+    return mapped
+
+
+def to_int(value):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def get_body(log_record):

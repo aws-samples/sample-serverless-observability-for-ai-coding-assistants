@@ -626,6 +626,14 @@ resource "aws_glue_catalog_table" "logs" {
       name = "os_type"
       type = "string"
     }
+    columns {
+      name = "status_code"
+      type = "string"
+    }
+    columns {
+      name = "error"
+      type = "string"
+    }
   }
 }
 
